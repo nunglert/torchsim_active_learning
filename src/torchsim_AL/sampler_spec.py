@@ -29,7 +29,9 @@ def sampler_spec(
     if dt <= 0:
         raise ValueError(f"dt must be positive, got {dt}")
     if n_steps_pt <= 0:
-        raise ValueError(f"n_steps_pt must be positive, got {n_steps_pt}")
+        raise ValueError(f"n_steps_pt must be bigger than 0, got {n_steps_pt}")
+    if n_steps_npt < 0:
+            raise ValueError(f"n_steps_pt must be positive, got {n_steps_npt}")
     if not model_paths:
         raise ValueError("At least one model path must be provided.")
     if "foundation" in model_paths and len(model_paths) > 1:
