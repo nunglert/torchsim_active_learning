@@ -79,7 +79,6 @@ class MDSpec:
         """Only plain, JSON-safe input data — derived functions are excluded."""
         return {
             "integrator_name": self.integrator_name,
-            "dt": self.dt,
             "init_kwargs": self.init_kwargs,
             "step_kwargs": self.step_kwargs,
         }
