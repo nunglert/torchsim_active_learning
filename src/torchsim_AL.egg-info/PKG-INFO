@@ -1,0 +1,33 @@
+Metadata-Version: 2.4
+Name: torchsim_AL
+Version: 0.0.0
+Summary: Package for a Replica Exchange Sampler in the remote_handler active learning framework
+Author-email: Bruno Bachmair <e11705357@tuwien.ac.at>
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: OS Independent
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Science/Research
+Classifier: Topic :: Scientific/Engineering :: Chemistry
+Classifier: Topic :: Scientific/Engineering :: Physics
+Classifier: Natural Language :: English
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: ase
+Requires-Dist: torch-sim-atomistic==0.6.0
+Requires-Dist: mace-torch==0.3.14
+Provides-Extra: dev
+Requires-Dist: pytest==7.4.0; extra == "dev"
+Requires-Dist: pre-commit; extra == "dev"
+Provides-Extra: docs
+Requires-Dist: sphinx>=7.0; extra == "docs"
+Requires-Dist: sphinx-autodoc-typehints; extra == "docs"
+Requires-Dist: sphinx-rtd-theme; extra == "docs"
+Provides-Extra: torch-sim
+Requires-Dist: mace-torch==0.3.14; extra == "torch-sim"
+Requires-Dist: torch-sim-atomistic==0.5.1; extra == "torch-sim"
+Requires-Dist: cuequivariance-torch==0.8.1; extra == "torch-sim"
+Provides-Extra: mace
+Requires-Dist: mace-torch==0.3.14; extra == "mace"
+Requires-Dist: cuequivariance-torch==0.8.1; extra == "mace"
+
+torchsim_AL
