@@ -5,6 +5,9 @@ import os
 from pathlib import Path
 from typing import Optional, Union
 from typing import Any
+import json
+
+from torchsim_AL import sampler_spec
 
 import ase.io
 import numpy as np
@@ -60,7 +63,6 @@ class TorchSimSampler(Sampler):
         cluster_config: ClusterConfig,
         sampling_script: os.PathLike,
         founder_path: os.PathLike,
-        ensemble: str,
         temperatures: list[float],
         integrator_name: str,
         init_kwargs: dict[str, Any],
@@ -84,7 +86,6 @@ class TorchSimSampler(Sampler):
         self.cluster_config = cluster_config
         self.sampling_script = sampling_script
         self.founder_path = founder_path
-        self.ensemble = ensemble
         self.temperatures = temperatures
         self.target_temperature = target_temperature
         self.model_paths = (
@@ -134,7 +135,20 @@ class TorchSimSampler(Sampler):
         if not self.stub:
             
 
-            #VALIDATION TODO
+            script_input = sampler_spec.validate_spec(
+                temperatures=self.temperatures,
+                dt=self.dt,
+                external_pressure=self.external_pressure
+                n_steps_npt=self.n_steps_npt
+                n_steps_pt=self.n_steps_pt
+                seed=self.seed
+                device=self.device
+                dtype=self.dtype
+                md_steps_per_exchange=self.md_steps_per_exchange
+                init_kwargs=self.init_kwargs
+                step_kwargs=self.step_kwargs
+                integrator_name=self.integrator_name
+            )
 
             self.script_input_file = self.results_dir / "input_torchsim.json"
             with open(self.script_input_file, "w") as f:

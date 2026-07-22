@@ -1,10 +1,10 @@
 from typing import Any, Optional
 from torchsim_AL.integrator_kwargs import MDSpec
 
-def sampler_spec(
+def validate_spec(
     *,
     integrator_name: str,
-    dt: float,
+    dt: float=0.001,
     init_kwargs: dict[str, Any],
     step_kwargs: dict[str, Any],
     ensemble: str,
@@ -14,7 +14,6 @@ def sampler_spec(
     n_steps_npt: int = 0,
     n_steps_pt: int = 100,
     seed: int = 123,
-    dt: float = 0.001,
     device: str = "cuda",
     dtype: str = "float32",
     md_steps_per_exchange: int = 100,
