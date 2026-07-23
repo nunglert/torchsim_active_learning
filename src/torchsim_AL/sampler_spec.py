@@ -3,11 +3,11 @@ from torchsim_AL.integrator_kwargs import MDSpec
 
 def validate_spec(
     *,
+    founder: str,
     integrator_name: str,
     dt: float=0.001,
     init_kwargs: dict[str, Any],
     step_kwargs: dict[str, Any],
-    ensemble: str,
     temperatures: list[float],
     model_paths: list[str],
     external_pressure: Optional[float] = None,
@@ -22,7 +22,9 @@ def validate_spec(
 
     # integrator kwargs validated against torchsim's real function signatures
     md_spec = MDSpec(integrator_name=integrator_name, init_kwargs=init_kwargs, step_kwargs=step_kwargs)
-
+    if integrator_name.startswith("nvt"):
+        if external_pressure!=0:
+            raise ValueError(f"no pressure can be set for NVT simulations. Got: {external_pressure}")
     if not temperatures or any(t <= 0 for t in temperatures):
         raise ValueError(f"temperatures must be non-empty and positive. Got: {temperatures}")
     if dt <= 0:
@@ -30,7 +32,7 @@ def validate_spec(
     if n_steps_pt <= 0:
         raise ValueError(f"n_steps_pt must be bigger than 0, got {n_steps_pt}")
     if n_steps_npt < 0:
-            raise ValueError(f"n_steps_pt must be positive, got {n_steps_npt}")
+        raise ValueError(f"n_steps_pt must be positive, got {n_steps_npt}")
     if not model_paths:
         raise ValueError("At least one model path must be provided.")
     if "foundation" in model_paths and len(model_paths) > 1:
@@ -44,7 +46,7 @@ def validate_spec(
 
     return {
         **md_spec.to_dict(),
-        "ensemble": ensemble,
+        "founder": founder,
         "temperatures": temperatures,
         "model_paths": model_paths,
         "external_pressure": external_pressure,
@@ -54,4 +56,7 @@ def validate_spec(
         "device": device,
         "dtype": dtype,
         "md_steps_per_exchange": md_steps_per_exchange,
+        "model_paths": model_paths,
+        "init_kwargs": init_kwargs,
+        "step_kwargs": step_kwargs
     }
