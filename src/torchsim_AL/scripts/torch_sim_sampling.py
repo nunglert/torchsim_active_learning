@@ -70,12 +70,12 @@ model = _make_model(mace=mace, device=input_config.device, dtype=dtype, compute_
 
 #make uncertainty props
 n_batch=len(input_config.temperatures)
-prop_calculators = _build_prop_calculators(model)
+prop_calculators = _build_prop_calculators(model, frequency=input_config.write_frequency)
 reporter_args = dict(
     filenames=[calcpath / f"trajectory_{i}.h5md" for i in range(n_batch)],
     state_frequency=input_config.write_frequency,
     prop_calculators=prop_calculators,
-)
+    )
 
 # Run simulation
 common_kwargs = dict(
