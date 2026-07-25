@@ -1,5 +1,5 @@
 from typing import Any, Optional
-from torchsim_AL.integrator_kwargs import MDSpec
+from torchsim_AL.md_kwargs import MDSpec
 
 def validate_spec(
     *,

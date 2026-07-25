@@ -1,8 +1,6 @@
 import inspect
-import json
 import logging
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any, Callable
 
 import torch_sim as ts
@@ -10,13 +8,37 @@ from torch_sim.integrators import INTEGRATOR_REGISTRY
 
 logger = logging.getLogger(__name__)
 
+# Names that are supplied programmatically by the sampler / parallel_tempering
+# loop and must never be set by the user via init_kwargs or step_kwargs.
+#
+# - state, model, dt, kT: threaded through explicitly on every init/step call.
+# - external_pressure: injected into step_kwargs by parallel_tempering() from
+#   the sampler's top-level `external_pressure` field (see sampler_spec.py)
 
-def _validate_kwargs(sig: inspect.Signature, kwargs: dict, label: str, ignore: set[str]) -> tuple[list[str], list[str]]:
+RESERVED_KWARGS: set[str] = {"state", "model", "dt", "kT", "external_pressure"}
+
+
+def _validate_kwargs(
+    sig: inspect.Signature, kwargs: dict, label: str, ignore: set[str]
+) -> tuple[list[str], list[str]]:
     params = {name: p for name, p in sig.parameters.items() if name not in ignore}
 
     unknown = set(kwargs) - set(params)
     if unknown:
-        raise TypeError(f"[{label}] Unknown parameter(s): {sorted(unknown)}. Valid: {sorted(params)}")
+        reserved_hit = unknown & RESERVED_KWARGS
+        real_unknown = unknown - RESERVED_KWARGS
+        msgs = []
+        if reserved_hit:
+            msgs.append(
+                f"{sorted(reserved_hit)} are supplied automatically by the "
+                "sampler and must not be set in init_kwargs/step_kwargs"
+            )
+        if real_unknown:
+            msgs.append(
+                f"{sorted(real_unknown)} are not accepted by this function. "
+                f"Valid: {sorted(params)}"
+            )
+        raise TypeError(f"[{label}] " + "; ".join(msgs))
 
     missing = [
         name for name, p in params.items()
@@ -58,10 +80,10 @@ class MDSpec:
         step_sig = inspect.signature(self.step_func)
 
         missing_init, defaulted_init = _validate_kwargs(
-            init_sig, self.init_kwargs, label=f"{self.integrator_name}.init", ignore={"state", "model", "dt", "kT"}
+            init_sig, self.init_kwargs, label=f"{self.integrator_name}.init", ignore=RESERVED_KWARGS
         )
         missing_step, defaulted_step = _validate_kwargs(
-            step_sig, self.step_kwargs, label=f"{self.integrator_name}.step", ignore={"state", "model", "dt", "kT"}
+            step_sig, self.step_kwargs, label=f"{self.integrator_name}.step", ignore=RESERVED_KWARGS
         )
 
         if missing_init or missing_step:

@@ -40,7 +40,7 @@ docs = [
 ]
 torch_sim = [
     "mace-torch==0.3.14",
-    "torch-sim-atomistic==0.5.1",
+    "torch-sim-atomistic==0.6.0",
     "cuequivariance-torch==0.8.1",
 ]
 mace = [

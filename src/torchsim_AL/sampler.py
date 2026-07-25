@@ -35,15 +35,11 @@ class TorchSimSampler(Sampler):
         founder_path: Path to founder structure file (ASE-readable)
         ensemble: Ensemble type, "nvt" or "npt"
         temperatures: List of replica temperatures in K
-        target_temperature: Target temperature in K (required for NVT ensemble)
         model_paths: List of MACE model identifiers. Use ["foundation"] for
             the MACE-MP foundation model. A single-element list runs a
             standard simulation; multiple entries activate the
             MaceEnsembleModel (shared-body ensemble with uncertainty).
         dt: Integration timestep in ps (default: 0.001)
-        gamma: Friction coefficient for Langevin thermostat (optional)
-        alpha: Friction coefficient for particle Langevin (NPT, optional)
-        cell_alpha: Friction coefficient for cell Langevin (NPT, optional)
         n_steps_npt: Number of equilibration steps without swaps (default: 0). These will not be used for selection.
         n_steps_pt: Number of production PT steps (default: 100)
         seed: Random seed (default: 123)
@@ -131,8 +127,7 @@ class TorchSimSampler(Sampler):
             else [sampler_input]
         )
 
-        if not self.stub:
-            
+        if not self.stub:  
             script_input = sampler_spec.validate_spec(
                 temperatures=self.temperatures,
                 dt=self.dt,
@@ -172,6 +167,10 @@ class TorchSimSampler(Sampler):
             # Copy founder structure to remote
             self.sampling_task.copy_file(self.founder_path)
 
+            if self.model_files == ["foundation"]:
+                is_foundation = True
+            else:
+                is_foundation = False
             # Copy model files to remote (unless using foundation model)
             if not is_foundation:
                 for p in self.model_files:
@@ -225,7 +224,7 @@ class TorchSimSampler(Sampler):
             ase.io.write(output_path, sampled_configs)
         else:
             self.sampling_task.submit()
-            self.sampling_task.collect_results(
+            self.sampling_task.collect_results()
             # Read all trajectory frames and pass to selector
             results_path = Path(self.sampling_task.local_savepath)
             traj_paths = sorted(results_path.glob("trajectory_*.h5md"))
