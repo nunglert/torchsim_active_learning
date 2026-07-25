@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 from typing import Any
 import json
 
@@ -11,12 +11,11 @@ from torchsim_AL import sampler_spec
 
 import ase.io
 import numpy as np
-import yaml
 from ase import Atoms
+from torchsim_AL.scripts.read_trajectory_to_atoms import _read_trajectory_frames
 from remote_handler.core.cluster_handler import ClusterConfig
 from remote_handler.core.file_handler import FileSystemHandlerBase
 from remote_handler.core.tasks import SingleScriptTask
-from remote_handler.exceptions import FileSystemError, WorkflowError
 from remote_handler.workflows.active_learning_base import Sampler
 
 logger = logging.getLogger(__name__)
@@ -134,7 +133,6 @@ class TorchSimSampler(Sampler):
 
         if not self.stub:
             
-
             script_input = sampler_spec.validate_spec(
                 temperatures=self.temperatures,
                 dt=self.dt,
@@ -212,11 +210,6 @@ class TorchSimSampler(Sampler):
         """
         Run torch_sim parallel tempering and collect configurations.
 
-        If a ``selector`` was provided, trajectory h5md files are passed
-        to the selector which picks configurations according to its
-        strategy. Otherwise the script's default output (final frame per
-        replica) is returned.
-
         Returns:
             Path to extxyz file containing sampled configurations
         """
@@ -232,39 +225,31 @@ class TorchSimSampler(Sampler):
             ase.io.write(output_path, sampled_configs)
         else:
             self.sampling_task.submit()
-            self.sampling_task.collect_results()
-
-            if self.selector is not None:
-                # Read all trajectory frames and pass to selector
-                results_path = Path(self.sampling_task.local_savepath)
-                traj_paths = sorted(results_path.glob("trajectory_*.h5md"))
-                if not traj_paths:
-                    logger.warning(
-                        "No trajectory_*.h5md files found in %s, "
-                        "falling back to script output",
-                        results_path,
-                    )
-                    output_path = results_path / "out/samples.extxyz"
-                else:
-                    from torch_sim.trajectory import TorchSimTrajectory
-
-                    grouped_frames: list[list[Atoms]] = []
-                    for traj_path in traj_paths:
-                        traj = TorchSimTrajectory(str(traj_path), mode="r")
-                        frames = _read_trajectory_frames(traj)
-                        traj.close()
-                        grouped_frames.append(frames[self.n_steps_npt:])
-
-                    selected = self.selector.select(grouped_frames)
-                    output_dir = results_path / "out"
-                    os.makedirs(output_dir, exist_ok=True)
-                    output_path = output_dir / "samples.extxyz"
-                    ase.io.write(output_path, selected)
-            else:
-                output_path = (
-                    Path(self.sampling_task.local_savepath)
-                    / "out/samples.extxyz"
+            self.sampling_task.collect_results(
+            # Read all trajectory frames and pass to selector
+            results_path = Path(self.sampling_task.local_savepath)
+            traj_paths = sorted(results_path.glob("trajectory_*.h5md"))
+            if not traj_paths:
+                logger.warning(
+                    "No trajectory_*.h5md files found in %s, "
+                    "falling back to script output",
+                    results_path,
                 )
+                output_path = results_path / "out/samples.extxyz"
+            else:
+                from torch_sim.trajectory import TorchSimTrajectory
+
+                atoms_list: list[list[Atoms]] = []
+                for traj_path in traj_paths:
+                    traj = TorchSimTrajectory(str(traj_path), mode="r")
+                    atoms = _read_trajectory_frames(traj, self.n_steps_npt)
+                    traj.close()
+                    atoms_list.append(atoms)
+
+                output_dir = results_path / "out"
+                os.makedirs(output_dir, exist_ok=True)
+                output_path = output_dir / "samples.extxyz"
+                ase.io.write(output_path, atoms_list)
 
         logger.info(
             f"Torch_sim sampled configurations written to {output_path}"
