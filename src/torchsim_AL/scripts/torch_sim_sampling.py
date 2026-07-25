@@ -99,9 +99,9 @@ common_kwargs = dict(
     md_steps_per_exchange=input_config.md_steps_per_exchange,
     seed=input_config.seed,
     external_pressure=input_config.external_pressure,
-    swap_temperature=swap_temperature,
-    rescale_momenta_on_swap=rescale_momenta_on_swap,
-    rescale_barostat_on_swap=rescale_barostat_on_swap,
+    swap_temperature=input_config.swap_temperature,
+    rescale_momenta_on_swap=input_config.rescale_momenta_on_swap,
+    rescale_barostat_on_swap=input_config.rescale_barostat_on_swap,
     )
 
 state, temperatures, P, swap_log = parallel_tempering(**common_kwargs, reporter_args=reporter_args)
