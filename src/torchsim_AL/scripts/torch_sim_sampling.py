@@ -10,11 +10,13 @@ to ``out/samples.extxyz``.
 import os
 import sys
 import logging
+import copy
 from pathlib import Path
 import json
 from types import SimpleNamespace
 import ase.io
 import torch
+import torch_sim as ts
 from torchsim_AL.scripts.make_mace import _make_model
 from torchsim_AL.scripts.parallel_tempering import parallel_tempering
 from torchsim_AL.scripts.uncertainty_props import _build_prop_calculators
@@ -77,23 +79,30 @@ reporter_args = dict(
     prop_calculators=prop_calculators,
     )
 
+#Prep input formats for torchsim
+replica_atoms = [copy.deepcopy(at) for _ in range(n_batch)]
+state_in = ts.initialize_state(replica_atoms, device=device, dtype=dtype)
+temperatures_tensor = torch.tensor(
+        input_config.temperatures, dtype=dtype, device=device
+    )
+
 # Run simulation
 common_kwargs = dict(
-    at=at,
-    calcpath=calcpath,
-    temperatures=input_config.temperatures,
-    mace=mace,
+    state=state_in,
+    model=model,
+    integrator_name=input_config.integrator_name,
+    temperatures=temperatures_tensor,
     dt=input_config.dt,
-    external_pressure=input_config.external_pressure,
-    n_steps_npt=input_config.n_steps_npt,
-    n_steps_pt=input_config.n_steps_pt,
-    seed=input_config.seed,
-    device=torch.device(input_config.device),
-    dtype=dtype,
-    md_steps_per_exchange=input_config.md_steps_per_exchange,
     init_kwargs=input_config.init_kwargs,
     step_kwargs=input_config.step_kwargs,
-)
+    n_total_steps=input_config.n_steps_pt,
+    md_steps_per_exchange=input_config.md_steps_per_exchange,
+    seed=input_config.seed,
+    external_pressure=input_config.external_pressure,
+    swap_temperature=swap_temperature,
+    rescale_momenta_on_swap=rescale_momenta_on_swap,
+    rescale_barostat_on_swap=rescale_barostat_on_swap,
+    )
 
 state, temperatures, P, swap_log = parallel_tempering(**common_kwargs, reporter_args=reporter_args)
 
