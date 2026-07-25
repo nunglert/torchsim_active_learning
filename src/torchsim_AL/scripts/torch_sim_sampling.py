@@ -9,6 +9,7 @@ to ``out/samples.extxyz``.
 
 import os
 import sys
+import logging
 from pathlib import Path
 import json
 from types import SimpleNamespace
@@ -17,6 +18,8 @@ import torch
 from torchsim_AL.scripts.make_mace import _make_model
 from torchsim_AL.scripts.parallel_tempering import parallel_tempering
 from torchsim_AL.scripts.uncertainty_props import _build_prop_calculators
+
+logger = logging.getLogger(__name__)
 
 # Redirect temp files to ~/tmp unconditionally.  Some GPU nodes have a
 # non-writable /tmp which causes NVIDIA's NVRTC compiler (used by warp for
@@ -36,24 +39,33 @@ with open("config.json") as f:
     data = json.load(f)
     input_config = SimpleNamespace(**data)
 
-# Resolve dtype
+# Resolve dtype and device
 dtype_map = {"float32": torch.float32, "float64": torch.float64}
 dtype = dtype_map[input_config.dtype]
+device = torch.device(input_config.device)
 
 # Load founder structure
 at = ase.io.read(calcpath / input_config.founder)
+logger.info("Loading founder structure from %s", founder_file)
 
 # Load MACE model(s)
 if len(input_config.model_paths) > 1:
     # Ensemble mode — pass list of paths; MaceEnsembleModel handles loading
+    logger.info(
+        "Loading %d-member MACE ensemble: %s",
+        len(input_config.model_paths),
+        input_config.model_paths,
+        )
     mace = [calcpath / p for p in input_config.model_paths]
 elif input_config.model_paths[0] == "foundation":
+    logger.info("Loading MACE-MP foundation model")
     from mace.calculators.foundations_models import mace_mp
     mace = mace_mp(model="small", return_raw_model=True)
 else:
-    mace = torch.load(
-        calcpath / input_config.model_paths[0], map_location="cpu"
-    )
+    model_file = calcpath / input_config.model_paths[0]
+    logger.info("Loading single MACE model from %s", model_file)
+    mace = torch.load(model_file, map_location="cpu")
+
 model = _make_model(mace=mace, device=input_config.device, dtype=dtype, compute_forces=True, compute_stress=False)
 
 #make uncertainty props

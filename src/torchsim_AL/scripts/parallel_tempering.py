@@ -148,7 +148,6 @@ def parallel_tempering(
                 kT=kT,
                 external_pressure=P,
                 swap_temperature=swap_temperature,
-                #swap_pressure=(swap_pressure if ensemble == "npt" else False),
                 rescale_momenta=rescale_momenta_on_swap,
                 rescale_barostat=rescale_barostat_on_swap,
             )

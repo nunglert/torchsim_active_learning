@@ -121,28 +121,40 @@ class TorchSimSampler(Sampler):
         os.makedirs(self.sample_dir, exist_ok=True)
         os.makedirs(self.results_dir, exist_ok=True)
 
-        self.model_files = (
-            sampler_input
-            if isinstance(sampler_input, list)
-            else [sampler_input]
-        )
+        is_foundation = self.model_files == ["foundation"]
+        if is_foundation:
+            current_model_paths = ["foundation"]
+        else:
+            current_model_paths = [Path(p).name for p in self.model_files]
 
-        if not self.stub:  
-            script_input = sampler_spec.validate_spec(
-                temperatures=self.temperatures,
-                dt=self.dt,
-                external_pressure=self.external_pressure
-                n_steps_npt=self.n_steps_npt
-                n_steps_pt=self.n_steps_pt
-                seed=self.seed
-                device=self.device
-                dtype=self.dtype
-                md_steps_per_exchange=self.md_steps_per_exchange
-                init_kwargs=self.init_kwargs
-                step_kwargs=self.step_kwargs
-                integrator_name=self.integrator_name
+        logger.info(
+            "Validating sampler input for integrator='%s', %d replicas",
+            self.integrator_name,
+            len(self.temperatures),
+        )
+ 
+        script_input = sampler_spec.validate_spec(
+            founder=self.founder_path,
+            temperatures=self.temperatures,
+            dt=self.dt,
+            external_pressure=self.external_pressure,
+            n_steps_npt=self.n_steps_npt,
+            n_steps_pt=self.n_steps_pt,
+            seed=self.seed,
+            device=self.device,
+            dtype=self.dtype,
+            md_steps_per_exchange=self.md_steps_per_exchange,
+            write_frequency=self.write_frequency,
+            swap_temperature=self.swap_temperature,
+            rescale_momenta_on_swap=self.rescale_momenta_on_swap,
+            rescale_barostat_on_swap=self.rescale_barostat_on_swap,
+            init_kwargs=self.init_kwargs,
+            step_kwargs=self.step_kwargs,
+            integrator_name=self.integrator_name,
+            model_paths=current_model_paths,
             )
 
+        if not self.stub: 
             self.script_input_file = self.results_dir / "input_torchsim.json"
             with open(self.script_input_file, "w") as f:
                 f.write(json.dumps(script_input, indent=2))
@@ -167,10 +179,6 @@ class TorchSimSampler(Sampler):
             # Copy founder structure to remote
             self.sampling_task.copy_file(self.founder_path)
 
-            if self.model_files == ["foundation"]:
-                is_foundation = True
-            else:
-                is_foundation = False
             # Copy model files to remote (unless using foundation model)
             if not is_foundation:
                 for p in self.model_files:
@@ -199,7 +207,6 @@ class TorchSimSampler(Sampler):
             )
 
             atoms.info["replica"] = i
-            atoms.info["ensemble"] = self.ensemble
             atoms.info["temperature"] = self.temperatures[i]
             mock_samples.append(atoms)
 
