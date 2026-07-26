@@ -38,15 +38,6 @@ docs = [
     "sphinx-autodoc-typehints",
     "sphinx-rtd-theme",
 ]
-torch_sim = [
-    "mace-torch==0.3.14",
-    "torch-sim-atomistic==0.6.0",
-    "cuequivariance-torch==0.8.1",
-]
-mace = [
-    "mace-torch==0.3.14",
-    "cuequivariance-torch==0.8.1",
-]
 
 [tool.setuptools.packages.find]
 where = ["src"]
