@@ -3,7 +3,7 @@ from ase import Atoms
 from torch_sim.trajectory import TorchSimTrajectory
 from torch_sim.io import state_to_atoms
 
-def _read_trajectory_frames(traj, n_steps_npt) -> list[Atoms]:
+def _read_trajectory_frames(traj, n_steps_npt, write_frequency) -> list[Atoms]:
     """Read all frames from a TorchSimTrajectory, attaching custom properties.
 
     ``TorchSimTrajectory.get_atoms`` only returns basic structural data
@@ -20,6 +20,7 @@ def _read_trajectory_frames(traj, n_steps_npt) -> list[Atoms]:
 
     traj = traj[:n_steps_npt]
     n_frames = traj._file.root.data.positions.shape[0]
+    n_steps_npt // max(write_frequency, 1)
     frames = [state_to_atoms(traj.get_state(i)) for i in range(n_steps_npt, n_frames)]
 
     # State arrays written by write_state — skip these when attaching props

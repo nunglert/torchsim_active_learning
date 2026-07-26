@@ -75,6 +75,7 @@ class TorchSimSampler(Sampler):
         loop_time: float = 30,
         stub: bool = False,
         md_steps_per_exchange: int = 100,
+        write_frequency: int=1,
     ):
         super().__init__()
         self.remote_fs = remote_fs
@@ -83,6 +84,7 @@ class TorchSimSampler(Sampler):
         self.founder_path = founder_path
         self.temperatures = temperatures
         self.target_temperature = target_temperature
+        self.write_frequency = write_frequency
         self.model_paths = (
             model_paths if model_paths is not None else ["foundation"]
         )
@@ -132,8 +134,10 @@ class TorchSimSampler(Sampler):
             self.integrator_name,
             len(self.temperatures),
         )
- 
-        script_input = sampler_spec.validate_spec(
+
+        if not self.stub: 
+
+            script_input = sampler_spec.validate_spec(
             founder=self.founder_path,
             temperatures=self.temperatures,
             dt=self.dt,
@@ -154,7 +158,6 @@ class TorchSimSampler(Sampler):
             model_paths=current_model_paths,
             )
 
-        if not self.stub: 
             self.script_input_file = self.results_dir / "input_torchsim.json"
             with open(self.script_input_file, "w") as f:
                 f.write(json.dumps(script_input, indent=2))
@@ -248,7 +251,7 @@ class TorchSimSampler(Sampler):
                 atoms_list: list[list[Atoms]] = []
                 for traj_path in traj_paths:
                     traj = TorchSimTrajectory(str(traj_path), mode="r")
-                    atoms = _read_trajectory_frames(traj, self.n_steps_npt)
+                    atoms = _read_trajectory_frames(traj, self.n_steps_npt, self.write_frequency)
                     traj.close()
                     atoms_list.append(atoms)
 
