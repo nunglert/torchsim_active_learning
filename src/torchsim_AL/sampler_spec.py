@@ -32,8 +32,9 @@ def _is_int(x: Any) -> bool:
     return isinstance(x, int) and not isinstance(x, bool)
 
 
-def _check_int(errors: list[str], name: str, value: Any, *, strict_positive: bool, positive: bool) -> bool:
-    """Validate an int field. Returns True if valid (safe to use in further checks)."""
+def _check_int(errors: list[str], name: str, value: Any, *, strict_positive: bool = False, positive: bool = False) -> bool:
+    """Validate an int field. Returns True if valid (safe to use in further checks).
+    strict_positive=True requires value > 0; positive=True requires value >= 0"""
     if not _is_int(value):
         errors.append(f"'{name}' must be an int, got {type(value).__name__} ({value!r}).")
         return False
@@ -161,9 +162,9 @@ def validate_spec(
     n_steps_pt_ok = _check_int(errors, "n_steps_pt", n_steps_pt, strict_positive=True)
     n_steps_npt_ok = _check_int(errors, "n_steps_npt", n_steps_npt, positive=True)
     md_steps_per_exchange_ok = _check_int(
-        errors, "md_steps_per_exchange", md_steps_per_exchange, positive=True
+        errors, "md_steps_per_exchange", md_steps_per_exchange, strict_positive=True
     )
-    write_frequency_ok = _check_int(errors, "write_frequency", write_frequency, positive=True)
+    write_frequency_ok = _check_int(errors, "write_frequency", write_frequency, strict_positive=True)
 
     if n_steps_pt_ok and n_steps_npt_ok and n_steps_npt >= n_steps_pt:
         errors.append(

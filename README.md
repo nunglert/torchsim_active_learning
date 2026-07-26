@@ -64,7 +64,7 @@ Do **not** put `external_pressure`, `dt`, `kT`, `state`, or `model` in `init_kwa
 | `loop_time` | `float` | seconds | `30` | polling interval for job completion |
 | `stub` | `bool` | — | `False` | skip cluster submission, generate mock output instead. Input validation still runs in stub mode — only the remote upload/submit is skipped |
 | `md_steps_per_exchange` | `int` | steps | `100` | MD steps between replica-exchange attempts |
-| `write_frequency` | `int` | steps | `10` | how often trajectory frames + per-step properties (energy, uncertainty) are written. Must be `<= n_steps_pt` |
+| `write_frequency` | `int` | steps | `1` | how often trajectory frames + per-step properties (energy, uncertainty) are written. Must be `<= n_steps_pt` |
 | `swap_temperature` | `bool` | — | `True` | whether exchange attempts swap temperature labels |
 | `rescale_momenta_on_swap` | `bool` | — | `True` | rescale momenta to the new temperature label on an accepted swap |
 | `rescale_barostat_on_swap` | `bool` | — | `True` | also rescale NPT barostat DOFs on an accepted swap (no-op for NVT) |
