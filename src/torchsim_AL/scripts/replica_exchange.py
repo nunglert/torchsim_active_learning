@@ -118,7 +118,7 @@ def attempt_replica_exchange(
     kT_new[i], kT_new[j] = kT[j], kT[i]
 
     # rescale kinetic DOFs when temperature label changes
-    if rescale_momenta and swap_temperature:
+    if rescale_momenta:
         si = torch.sqrt(kT_new[i] / kT[i])
         sj = torch.sqrt(kT_new[j] / kT[j])
         _rescale_atom_momenta_in_place(state, i, si)

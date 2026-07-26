@@ -130,54 +130,54 @@ def parallel_tempering(
             if trajectory_reporter:
                 trajectory_reporter.report(state, step, model=model)
         steps_done += block
+        if swap_temperature:
+            # --- choose non-overlapping neighbor pairs
+            if (exchange_round % 2) == 0:
+                pairs = [(i, i + 1) for i in range(0, n_sys - 1, 2)]
+            else:
+                pairs = [(i, i + 1) for i in range(1, n_sys - 1, 2)]
 
-        # --- choose non-overlapping neighbor pairs
-        if (exchange_round % 2) == 0:
-            pairs = [(i, i + 1) for i in range(0, n_sys - 1, 2)]
-        else:
-            pairs = [(i, i + 1) for i in range(1, n_sys - 1, 2)]
+            # --- attempt exchanges
+            for i, j in pairs:
+                stats["attempted"] += 1
+                kT, P, acc = attempt_replica_exchange(
+                    state,
+                    i=i,
+                    j=j,
+                    rng=rng,
+                    kT=kT,
+                    external_pressure=P,
+                    swap_temperature=swap_temperature,
+                    rescale_momenta=rescale_momenta_on_swap,
+                    rescale_barostat=rescale_barostat_on_swap,
+                )
+                stats["accepted"] += int(acc)
+                stats["attempted_pairs"].append(
+                    (steps_done, i, j, bool(acc))
+                )
 
-        # --- attempt exchanges
-        for i, j in pairs:
-            stats["attempted"] += 1
-            kT, P, acc = attempt_replica_exchange(
-                state,
-                i=i,
-                j=j,
-                rng=rng,
-                kT=kT,
-                external_pressure=P,
-                swap_temperature=swap_temperature,
-                rescale_momenta=rescale_momenta_on_swap,
-                rescale_barostat=rescale_barostat_on_swap,
-            )
-            stats["accepted"] += int(acc)
-            stats["attempted_pairs"].append(
-                (steps_done, i, j, bool(acc))
-            )
+            # --- update temperature labels in Kelvin for next MD block
+            kTs = runners._normalize_temperature_tensor(temperature=kT, n_steps=md_steps_per_exchange, initial_state=initial_state)
+            exchange_round += 1
+    if swap_temperature:
+        stats["accept_rate"] = stats["accepted"] / max(1, stats["attempted"])
 
-        # --- update temperature labels in Kelvin for next MD block
-        kTs = runners._normalize_temperature_tensor(temperature=kT, n_steps=md_steps_per_exchange, initial_state=initial_state)
-        exchange_round += 1
-
-    stats["accept_rate"] = stats["accepted"] / max(1, stats["attempted"])
-
-    # swap_log in your previous format
-    swap_data = [
-        {"step": int(step), "i": int(i), "j": int(j), "accepted": bool(acc)}
-        for (step, i, j, acc) in stats["attempted_pairs"]
-    ]
-    swap_log = {
-        "data": swap_data,
-        "info": {
-            "swap_temperature": bool(swap_temperature),
-            "accept_rate": float(stats["accept_rate"]),
-            "attempted": int(stats["attempted"]),
-            "accepted": int(stats["accepted"]),
-            "temperatures": temperatures.detach().cpu().tolist(),
-            "external_pressure": (P.detach().cpu().tolist()),
-        },
-    }
+        # swap_log in your previous format
+        swap_data = [
+            {"step": int(step), "i": int(i), "j": int(j), "accepted": bool(acc)}
+            for (step, i, j, acc) in stats["attempted_pairs"]
+        ]
+        swap_log = {
+            "data": swap_data,
+            "info": {
+                "swap_temperature": bool(swap_temperature),
+                "accept_rate": float(stats["accept_rate"]),
+                "attempted": int(stats["attempted"]),
+                "accepted": int(stats["accepted"]),
+                "temperatures": temperatures.detach().cpu().tolist(),
+                "external_pressure": (P.detach().cpu().tolist()),
+            },
+        }
 
     if trajectory_reporter:
         trajectory_reporter.finish()
