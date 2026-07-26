@@ -248,12 +248,12 @@ class TorchSimSampler(Sampler):
             else:
                 from torch_sim.trajectory import TorchSimTrajectory
 
-                atoms_list: list[list[Atoms]] = []
+                atoms_list: list[Atoms] = []
                 for traj_path in traj_paths:
                     traj = TorchSimTrajectory(str(traj_path), mode="r")
                     atoms = _read_trajectory_frames(traj, self.n_steps_npt, self.write_frequency)
                     traj.close()
-                    atoms_list.append(atoms)
+                    atoms_list.extend(atoms)
 
                 output_dir = results_path / "out"
                 os.makedirs(output_dir, exist_ok=True)
