@@ -64,7 +64,7 @@ def parallel_tempering(
         P = external_pressure
         step_kwargs["external_pressure"] = external_pressure
     else:
-        P = 0
+        P = None
 
     integrator = getattr(ts.Integrator, integrator_name)
     init_func, step_func = INTEGRATOR_REGISTRY[integrator]

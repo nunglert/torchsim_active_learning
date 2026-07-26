@@ -51,7 +51,6 @@ def attempt_replica_exchange(
     external_pressure: torch.Tensor
     | None = None,  # scalar or [n_systems] or [n_systems,3,3]
     swap_temperature: bool = True,
-    swap_pressure: bool = False,
     rescale_momenta: bool = True,
     rescale_barostat: bool = True,
 ) -> tuple[torch.Tensor, torch.Tensor | None, bool]:
@@ -93,33 +92,21 @@ def attempt_replica_exchange(
     beta = 1.0 / kT
     beta_i, beta_j = beta[i], beta[j]
 
-    # current labels
-    kTi, kTj = kT[i], kT[j]
-
-    # proposed labels
-    kT_i_new, kT_j_new = (kTj, kTi) if swap_temperature else (kTi, kTj)
+    kT_i, kT_j = kT[i], kT[j]
 
     def S(U, V, beta, P):
         return beta * (U + P * V)
 
     # log r = -[S_i(new) + S_j(new) - S_i(old) - S_j(old)]
-    if P is None:
-        log_r = -(
-            S(U[i], None, beta_j if swap_temperature else beta_i, None)
-            + S(U[j], None, beta_i if swap_temperature else beta_j, None)
-            - S(U[i], None, beta_i, None)
-            - S(U[j], None, beta_j, None)
-        )
-    else:
-        # old actions
-        S_i_old = S(U[i], V[i], beta_i, P_i)
-        S_j_old = S(U[j], V[j], beta_j, P_j)
-        # new actions with swapped labels
-        beta_i_new = 1.0 / kT_i_new
-        beta_j_new = 1.0 / kT_j_new
-        S_i_new = S(U[i], V[i], beta_i_new, P)
-        S_j_new = S(U[j], V[j], beta_j_new, P)
-        log_r = -(S_i_new + S_j_new - S_i_old - S_j_old)
+    # old actions
+    S_i_old = S(U[i], V[i], beta_i, P_i)
+    S_j_old = S(U[j], V[j], beta_j, P_j)
+    # new actions with swapped labels
+    beta_i_new = beta_j
+    beta_j_new = beta_i
+    S_i_new = S(U[i], V[i], beta_i_new, P)
+    S_j_new = S(U[j], V[j], beta_j_new, P)
+    log_r = -(S_i_new + S_j_new - S_i_old - S_j_old)
 
     u = torch.rand((), generator=rng, device=kT.device, dtype=kT.dtype)
     accept = torch.log(u) < log_r
@@ -128,13 +115,12 @@ def attempt_replica_exchange(
 
     # apply swaps
     kT_new = kT.clone()
-    if swap_temperature:
-        kT_new[i], kT_new[j] = kTj, kTi
+    kT_new[i], kT_new[j] = kT[j], kT[i]
 
     # rescale kinetic DOFs when temperature label changes
     if rescale_momenta and swap_temperature:
-        si = torch.sqrt(kT_new[i] / kTi)
-        sj = torch.sqrt(kT_new[j] / kTj)
+        si = torch.sqrt(kT_new[i] / kT[i])
+        sj = torch.sqrt(kT_new[j] / kT[j])
         _rescale_atom_momenta_in_place(state, i, si)
         _rescale_atom_momenta_in_place(state, j, sj)
         if rescale_barostat:
