@@ -48,7 +48,7 @@ device = torch.device(input_config.device)
 
 # Load founder structure
 at = ase.io.read(calcpath / input_config.founder)
-logger.info("Loading founder structure from %s", founder_file)
+logger.info("Loading founder structure from %s", input_config.founder_file)
 
 # Load MACE model(s)
 if len(input_config.model_paths) > 1:
