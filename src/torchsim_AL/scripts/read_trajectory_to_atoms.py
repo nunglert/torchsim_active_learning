@@ -20,8 +20,9 @@ def _read_trajectory_frames(traj, n_steps_npt, write_frequency) -> list[Atoms]:
 
     traj = traj[:n_steps_npt]
     n_frames = traj._file.root.data.positions.shape[0]
-    n_steps_npt // max(write_frequency, 1)
-    frames = [state_to_atoms(traj.get_state(i)) for i in range(n_steps_npt, n_frames)]
+    burn_in = n_steps_npt // max(write_frequency, 1)
+    
+    frames = [state_to_atoms(traj.get_state(i)[0]) for i in range(burn_in, n_frames)]
 
     # State arrays written by write_state — skip these when attaching props
     _state_keys = {"positions", "cell", "masses", "atomic_numbers", "pbc"}
