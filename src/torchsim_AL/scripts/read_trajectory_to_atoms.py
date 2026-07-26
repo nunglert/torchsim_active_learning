@@ -40,7 +40,7 @@ def _read_trajectory_frames(traj, n_steps_npt, write_frequency) -> list[Atoms]:
             val = arr[i]
             if val.ndim == 0 or (val.ndim == 1 and val.shape[0] == 1):
                 # Scalar → atoms.info
-                at.info[name] = float(val)
+                at.info[name] = val.item()
             elif val.ndim >= 1 and val.shape[0] == len(at):
                 # Per-atom array → atoms.arrays
                 at.arrays[name] = np.ascontiguousarray(val)
