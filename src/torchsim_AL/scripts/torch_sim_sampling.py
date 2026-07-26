@@ -104,8 +104,16 @@ common_kwargs = dict(
     rescale_barostat_on_swap=input_config.rescale_barostat_on_swap,
     )
 
+logger.info("Starting parallel tempering: n_total_steps=%d, md_steps_per_exchange=%d", input_config.n_steps_pt, input_config.md_steps_per_exchange)
 state, temperatures, P, swap_log = parallel_tempering(**common_kwargs, reporter_args=reporter_args)
+logger.info(
+    "Parallel tempering finished: accept_rate=%.3f (%d/%d attempted)",
+    swap_log["info"]["accept_rate"],
+    swap_log["info"]["accepted"],
+    swap_log["info"]["attempted"],
+    )
 
-#write swap_log
-with Path(calcpath / "pt_swaps.json").open("w") as f:
+swap_log_path = calcpath / "pt_swaps.json"
+with swap_log_path.open("w") as f:
     json.dump(swap_log, f)
+logger.info("Wrote swap log to %s", swap_log_path)
