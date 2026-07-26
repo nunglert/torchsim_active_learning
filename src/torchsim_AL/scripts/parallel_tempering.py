@@ -159,6 +159,7 @@ def parallel_tempering(
             # --- update temperature labels in Kelvin for next MD block
             kTs = runners._normalize_temperature_tensor(temperature=kT, n_steps=md_steps_per_exchange, initial_state=initial_state)
             exchange_round += 1
+
     if swap_temperature:
         stats["accept_rate"] = stats["accepted"] / max(1, stats["attempted"])
 
@@ -175,7 +176,7 @@ def parallel_tempering(
                 "attempted": int(stats["attempted"]),
                 "accepted": int(stats["accepted"]),
                 "temperatures": temperatures.detach().cpu().tolist(),
-                "external_pressure": (P.detach().cpu().tolist()),
+                **({"external_pressure": P.detach().cpu().tolist()} if P is not None else {}),
             },
         }
 
