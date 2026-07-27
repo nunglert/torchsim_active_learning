@@ -145,6 +145,24 @@ class TorchSimSampler(Sampler):
 
         if not self.stub:
 
+            logger.info(
+                "Validating sampler input for integrator='%s', %d replicas",
+                self.integrator_name,
+                len(self.temperatures),
+            )
+
+            #Check if model exists.
+            if not Path(self.founder_path).exists():
+                msg = f"founder_path does not exist locally: {self.founder_path}"
+                logger.error(msg)
+                raise FileNotFoundError(msg)
+            if not is_foundation:
+                missing = [p for p in self.model_files if not Path(p).exists()]
+                if missing:
+                    msg = f"Model file(s) not found locally, cannot upload to cluster: {missing}"
+                    logger.error(msg)
+                    raise FileNotFoundError(msg)
+
             script_input = sampler_spec.validate_spec(
             founder=Path(self.founder_path).name,
             temperatures=self.temperatures,
@@ -165,6 +183,8 @@ class TorchSimSampler(Sampler):
             integrator_name=self.integrator_name,
             model_paths=current_model_paths,
             )
+
+            self.model_paths = current_model_paths
 
             self.script_input_file = self.results_dir / "input_torchsim.json"
             with open(self.script_input_file, "w") as f:
@@ -245,7 +265,10 @@ class TorchSimSampler(Sampler):
             self.sampling_task.collect_results()
             # Read all trajectory frames and pass to selector
             results_path = Path(self.sampling_task.local_savepath)
-            traj_paths = sorted(results_path.glob("trajectory_*.h5md"))
+            traj_paths = sorted(
+                results_path.glob("trajectory_*.h5md"),
+                key=lambda p: int(p.stem.rsplit("_", 1)[-1]),
+            )
             if not traj_paths:
                 logger.warning(
                     "No trajectory_*.h5md files found in %s, "
