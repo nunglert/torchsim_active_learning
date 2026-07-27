@@ -33,7 +33,6 @@ class TorchSimSampler(Sampler):
         cluster_config: ClusterConfig with partition, conda env, template settings
         sampling_script: Path to torch_sim_sampling.py or compatible script
         founder_path: Path to founder structure file (ASE-readable)
-        ensemble: Ensemble type, "nvt" or "npt"
         temperatures: List of replica temperatures in K
         model_paths: List of MACE model identifiers. Use ["foundation"] for
             the MACE-MP foundation model. A single-element list runs a
@@ -47,9 +46,6 @@ class TorchSimSampler(Sampler):
         dtype: Torch dtype string (default: "float32")
         remote_savepath: Path on remote machine for calculation files
         loop_time: Interval (seconds) to poll for job completion
-        selector: Optional ConfigSelector strategy for choosing which
-            configurations from the PT trajectories to return. If None,
-            the script's default output (final frame per replica) is used.
     """
 
     def __init__(
