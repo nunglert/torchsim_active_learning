@@ -69,7 +69,7 @@ else:
     logger.info("Loading single MACE model from %s", model_file)
     mace = torch.load(model_file, map_location="cpu")
 stress_conditional = input_config.integrator_name.startswith("npt")
-model = _make_model(mace=mace, device=input_config.device, dtype=dtype, compute_forces=True, compute_stress=stress_conditional)
+model = _make_model(mace=mace, device=device, dtype=dtype, compute_forces=True, compute_stress=stress_conditional)
 
 #make uncertainty props
 n_batch=len(input_config.temperatures)
