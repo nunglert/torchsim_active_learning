@@ -75,6 +75,9 @@ class TorchSimSampler(Sampler):
         loop_time: float = 30,
         stub: bool = False,
         md_steps_per_exchange: int = 100,
+        swap_temperature: bool = True,
+        rescale_momenta_on_swap: bool = True,
+        rescale_barostat_on_swap: bool = True,
         write_frequency: int=1,
     ):
         super().__init__()
@@ -102,6 +105,9 @@ class TorchSimSampler(Sampler):
         self.init_kwargs = init_kwargs
         self.step_kwargs = step_kwargs
         self.integrator_name = integrator_name
+        self.swap_temperature = swap_temperature
+        self.rescale_momenta_on_swap = rescale_momenta_on_swap
+        self.rescale_barostat_on_swap = rescale_barostat_on_swap
 
     def update(
         self, calcdir: Path, sampler_input: list[Path], **kwargs
@@ -123,6 +129,8 @@ class TorchSimSampler(Sampler):
         os.makedirs(self.sample_dir, exist_ok=True)
         os.makedirs(self.results_dir, exist_ok=True)
 
+        self.model_files = sampler_input if isinstance(sampler_input, list) else [sampler_input]
+
         is_foundation = self.model_files == ["foundation"]
         if is_foundation:
             current_model_paths = ["foundation"]
@@ -135,7 +143,7 @@ class TorchSimSampler(Sampler):
             len(self.temperatures),
         )
 
-        if not self.stub: 
+        if not self.stub:
 
             script_input = sampler_spec.validate_spec(
             founder=Path(self.founder_path).name,

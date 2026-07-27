@@ -152,9 +152,9 @@ def parallel_tempering(
                         (steps_done, i, j, bool(acc))
                     )
 
-                # --- update temperature labels in Kelvin for next MD block
-                kTs = runners._normalize_temperature_tensor(temperature=kT, n_steps=md_steps_per_exchange, initial_state=initial_state)
-                exchange_round += 1
+            # --- update temperature labels in Kelvin for next MD block
+            kTs = runners._normalize_temperature_tensor(temperature=kT, n_steps=md_steps_per_exchange, initial_state=initial_state)
+            exchange_round += 1
 
         if swap_temperature:
             stats["accept_rate"] = stats["accepted"] / max(1, stats["attempted"])
