@@ -138,7 +138,7 @@ class TorchSimSampler(Sampler):
         if not self.stub: 
 
             script_input = sampler_spec.validate_spec(
-            founder=self.founder_path,
+            founder=Path(self.founder_path).name,
             temperatures=self.temperatures,
             dt=self.dt,
             external_pressure=self.external_pressure,

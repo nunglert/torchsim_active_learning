@@ -50,21 +50,14 @@ def attempt_replica_exchange(
     kT: torch.Tensor,  # [n_systems]
     external_pressure: torch.Tensor
     | None = None,  # scalar or [n_systems] or [n_systems,3,3]
-    swap_temperature: bool = True,
     rescale_momenta: bool = True,
     rescale_barostat: bool = True,
 ) -> tuple[torch.Tensor, torch.Tensor | None, bool]:
     """
-    General replica exchange move for NVT / NPT.
-
-    Supports:
-      - temperature swap (kT labels) for NVT and NPT
-      - pressure swap (P labels) for NPT (optional)
-      - both simultaneously
+    Replica exchange move for NVT / NPT.
 
     Acceptance uses:
       S(x; beta, P) = beta * (U(x) + P*V(x))   (isotropic P)
-    so log r = -[S(x_i; beta_j,P_j)+S(x_j; beta_i,P_i) - S(x_i; beta_i,P_i)-S(x_j; beta_j,P_j)].
 
     Returns updated (kT, external_pressure, accepted).
     """
@@ -74,56 +67,66 @@ def attempt_replica_exchange(
 
     n_sys = int(U.shape[0])
 
-    # Handle pressure parameterization, only isotropic case considered
-    P = external_pressure
-    if not isinstance(P, torch.Tensor):
-        P = torch.as_tensor(P, device=kT.device, dtype=kT.dtype)
-    # Accept scalar or [n_systems]; (ignore tensor anisotropy here)
-    if P.ndim == 0:
-        P = P.expand(n_sys)
-    elif P.ndim == 3:
-        # if [n_systems,3,3], interpret as isotropic via trace/3
-        P = torch.einsum("bii->b", P) / 3.0
-    P_i = P[i]
-    P_j = P[j]
-
-    V = _get_volume_per_system(state) if P is not None else None
-
     beta = 1.0 / kT
     beta_i, beta_j = beta[i], beta[j]
 
     kT_i, kT_j = kT[i], kT[j]
-
-    def S(U, V, beta, P):
-        return beta * (U + P * V)
-
-    # log r = -[S_i(new) + S_j(new) - S_i(old) - S_j(old)]
-    # old actions
-    S_i_old = S(U[i], V[i], beta_i, P_i)
-    S_j_old = S(U[j], V[j], beta_j, P_j)
-    # new actions with swapped labels
     beta_i_new = beta_j
     beta_j_new = beta_i
-    S_i_new = S(U[i], V[i], beta_i_new, P)
-    S_j_new = S(U[j], V[j], beta_j_new, P)
+
+    def S(U, beta, P=None, V=None):
+        s = beta * U
+        if P is not None:
+            s = s + beta * P * V
+        return s
+
+    if external_pressure is None:
+        # Pure NVT acceptance criterion, no P*V term. torch.as_tensor(None)
+        # raises, so this must be handled before any tensor conversion below.
+        P_out = None
+        S_i_old = S(U[i], beta_i)
+        S_j_old = S(U[j], beta_j)
+        S_i_new = S(U[i], beta_i_new)
+        S_j_new = S(U[j], beta_j_new)
+    else:
+        # Handle pressure parameterization, only isotropic case considered.
+        P = external_pressure
+        if not isinstance(P, torch.Tensor):
+            P = torch.as_tensor(P, device=kT.device, dtype=kT.dtype)
+        # Accept scalar or [n_systems]; (ignore tensor anisotropy here)
+        if P.ndim == 0:
+            P = P.expand(n_sys)
+        elif P.ndim == 3:
+            # if [n_systems,3,3], interpret as isotropic via trace/3
+            P = torch.einsum("bii->b", P) / 3.0
+        P_i, P_j = P[i], P[j]
+        V = _get_volume_per_system(state)
+        V_i, V_j = V[i], V[j]
+        P_out = external_pressure
+
+        S_i_old = S(U[i], beta_i, P_i, V_i)
+        S_j_old = S(U[j], beta_j, P_j, V_j)
+        S_i_new = S(U[i], beta_i_new, P_i, V_i)
+        S_j_new = S(U[j], beta_j_new, P_j, V_j)
+
     log_r = -(S_i_new + S_j_new - S_i_old - S_j_old)
 
     u = torch.rand((), generator=rng, device=kT.device, dtype=kT.dtype)
     accept = torch.log(u) < log_r
     if not bool(accept):
-        return kT, external_pressure, False
+        return kT, P_out, False
 
     # apply swaps
     kT_new = kT.clone()
-    kT_new[i], kT_new[j] = kT[j], kT[i]
+    kT_new[i], kT_new[j] = kT_j, kT_i
 
     # rescale kinetic DOFs when temperature label changes
     if rescale_momenta:
-        si = torch.sqrt(kT_new[i] / kT[i])
-        sj = torch.sqrt(kT_new[j] / kT[j])
+        si = torch.sqrt(kT_new[i] / kT_i)
+        sj = torch.sqrt(kT_new[j] / kT_j)
         _rescale_atom_momenta_in_place(state, i, si)
         _rescale_atom_momenta_in_place(state, j, sj)
         if rescale_barostat:
             _rescale_barostat_dofs_in_place(state, i, si)
             _rescale_barostat_dofs_in_place(state, j, sj)
-    return kT_new, external_pressure, True
+    return kT_new, P_out, True
