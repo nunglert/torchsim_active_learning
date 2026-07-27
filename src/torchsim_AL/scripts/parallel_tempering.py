@@ -84,7 +84,6 @@ def parallel_tempering(
     runners._write_initial_state(trajectory_reporter, state, model)
 
     try:
-
         stats = {
             "attempted": 0,
             "accepted": 0,
@@ -92,7 +91,7 @@ def parallel_tempering(
             "attempted_pairs": [],  # (step, i, j, accepted)
         }
 
-        steps_done = 0
+        steps_done = 1
         exchange_round = 0
 
         while steps_done < n_total_steps:
@@ -100,8 +99,8 @@ def parallel_tempering(
                 block = first_block
             else:
                 block = min(md_steps_per_exchange, n_total_steps - steps_done)
-                
-            initial_step = runners._determine_initial_step_for_integrate(trajectory_reporter)
+
+            initial_step = steps_done
             for step in range(initial_step, initial_step + block):
                 state = step_func(
                     state=state,
@@ -131,7 +130,6 @@ def parallel_tempering(
                         rng=rng,
                         kT=kT,
                         external_pressure=P,
-                        swap_temperature=swap_temperature,
                         rescale_momenta=rescale_momenta_on_swap,
                         rescale_barostat=rescale_barostat_on_swap,
                     )
