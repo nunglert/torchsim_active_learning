@@ -100,19 +100,7 @@ def parallel_tempering(
                 block = first_block
             else:
                 block = min(md_steps_per_exchange, n_total_steps - steps_done)
-            # Create a fresh reporter per block because ts.integrate() closes
-            # file handles on return.  First block uses mode="w"; subsequent
-            # blocks append with mode="a".
-            if reporter_args is not None:
-                mode = "a"
-                ra = dict(reporter_args)
-                tk = ra.pop("trajectory_kwargs", {})
-                tk["mode"] = mode
-                ra["trajectory_kwargs"] = tk
-                trajectory_reporter = TrajectoryReporter(**ra)
-            else:
-                trajectory_reporter = None
-
+                
             initial_step = runners._determine_initial_step_for_integrate(trajectory_reporter)
             for step in range(initial_step, initial_step + block):
                 state = step_func(
