@@ -2,11 +2,14 @@ import numpy as np
 from ase import Atoms
 from torch_sim.trajectory import TorchSimTrajectory
 from torch_sim.io import state_to_atoms
+import logging
+
+logger = logging.getLogger(__name__)
 
 def _read_trajectory_frames(traj, n_steps_npt, write_frequency) -> list[Atoms]:
     """Read all frames from a TorchSimTrajectory, attaching custom properties.
 
-    ``TorchSimTrajectory.get_atoms`` only returns basic structural data
+    ``state_to_atoms`` only returns basic structural data
     (positions, cell, numbers, pbc).  This helper additionally reads any
     custom arrays stored by ``TrajectoryReporter`` (e.g. from
     ``prop_calculators``) and attaches them to each ``Atoms`` object:
@@ -18,11 +21,20 @@ def _read_trajectory_frames(traj, n_steps_npt, write_frequency) -> list[Atoms]:
       ``atoms.arrays[name]``.
     """
 
-    traj = traj[:n_steps_npt]
-    n_frames = traj._file.root.data.positions.shape[0]
+    n_frames = len(traj)
     burn_in = n_steps_npt // max(write_frequency, 1)
     
-    frames = [state_to_atoms(traj.get_state(i)[0]) for i in range(burn_in, n_frames)]
+    frames = [state_to_atoms(traj.get_state(i))[0] for i in range(burn_in, n_frames)]
+
+    if burn_in >= n_frames:
+            logger.warning(
+                "n_steps_npt=%d (%d frames at write_frequency=%d) covers the "
+                "entire trajectory (%d frames) — no production frames to return.",
+                n_steps_npt,
+                burn_in,
+                write_frequency,
+                n_frames,
+            )
 
     # State arrays written by write_state — skip these when attaching props
     _state_keys = {"positions", "cell", "masses", "atomic_numbers", "pbc"}
@@ -30,7 +42,7 @@ def _read_trajectory_frames(traj, n_steps_npt, write_frequency) -> list[Atoms]:
 
     for name in prop_names:
         try:
-            arr = traj.get_array(name=name, start=n_steps_npt, stop=n_frames)
+            arr = traj.get_array(name=name, start=burn_in, stop=n_frames)
         except Exception:
             continue
 
