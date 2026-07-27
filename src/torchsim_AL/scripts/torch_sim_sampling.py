@@ -21,6 +21,10 @@ from torchsim_AL.scripts.make_mace import _make_model
 from torchsim_AL.scripts.parallel_tempering import parallel_tempering
 from torchsim_AL.scripts.uncertainty_props import _build_prop_calculators
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 # Redirect temp files to ~/tmp unconditionally.  Some GPU nodes have a
