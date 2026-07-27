@@ -37,7 +37,8 @@ os.environ["TMP"] = str(_tmp_fallback)
 INPUTFILE = Path(sys.argv[1])
 calcpath = INPUTFILE.parent
 
-with open("config.json") as f:
+with open(INPUTFILE) as f:
+    logger.info("Reading sampler config from %s", INPUTFILE)
     data = json.load(f)
     input_config = SimpleNamespace(**data)
 
@@ -48,7 +49,7 @@ device = torch.device(input_config.device)
 
 # Load founder structure
 at = ase.io.read(calcpath / input_config.founder)
-logger.info("Loading founder structure from %s", input_config.founder_file)
+logger.info("Loading founder structure from %s", input_config.founder)
 
 # Load MACE model(s)
 if len(input_config.model_paths) > 1:
