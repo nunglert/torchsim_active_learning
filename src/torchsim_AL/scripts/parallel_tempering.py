@@ -1,8 +1,3 @@
-import json
-from collections import defaultdict
-
-import matplotlib.pyplot as plt
-import numpy as np
 import torch
 import torch_sim as ts
 from torch_sim.trajectory import TrajectoryReporter
