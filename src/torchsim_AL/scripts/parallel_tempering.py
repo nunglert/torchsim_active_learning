@@ -158,7 +158,7 @@ def parallel_tempering(
                     "attempted": int(stats["attempted"]),
                     "accepted": int(stats["accepted"]),
                     "temperatures": temperatures.detach().cpu().tolist(),
-                    **({"external_pressure": P.detach().cpu().tolist()} if P is not None else {}),
+                    **({"external_pressure": P.detach().cpu().tolist()} if isinstance(P, torch.Tensor) else P),
                 },
             }
 
