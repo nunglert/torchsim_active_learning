@@ -57,9 +57,9 @@ Do **not** put `external_pressure`, `dt`, `kT`, `state`, or `model` in `init_kwa
 | `external_pressure` | `float \| None` | bar | `None` | NPT only; must be `None` or `0` for NVT integrators. If left `None` for NPT, defaults to 0 bar (logged as a warning) |
 | `n_steps_npt` | `int` | steps | `0` | **despite the name, this applies to both NVT and NPT.** It does *not* run a separate equilibration phase — it only controls how many leading MD steps are excluded when `get_sampled_configs()` selects frames for the AL loop. Must be `< n_steps_pt` |
 | `n_steps_pt` | `int` | steps | `100` | total production PT steps |
-| `seed` | `int` | — | `123` | RNG seed |
+| `seed` | `int` | — | `42` | RNG seed |
 | `device` | `str` | — | `"cuda"` | `"cpu"`, `"cuda"`, or `"cuda:N"` |
-| `dtype` | `str` | — | `"float32"` | `"float32"` or `"float64"` |
+| `dtype` | `str` | — | `"float64"` | `"float32"` or `"float64"` |
 | `remote_savepath` | path \| `None` | — | `None` | remote-side calculation directory |
 | `loop_time` | `float` | seconds | `30` | polling interval for job completion |
 | `stub` | `bool` | — | `False` | skip cluster submission, generate mock output instead. Input validation still runs in stub mode — only the remote upload/submit is skipped |

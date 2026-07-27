@@ -91,7 +91,7 @@ def parallel_tempering(
             "attempted_pairs": [],  # (step, i, j, accepted)
         }
 
-        steps_done = 1
+        steps_done = 0
         exchange_round = 0
 
         while steps_done < n_total_steps:
@@ -100,7 +100,7 @@ def parallel_tempering(
             else:
                 block = min(md_steps_per_exchange, n_total_steps - steps_done)
 
-            initial_step = steps_done
+            initial_step = steps_done + 1
             for step in range(initial_step, initial_step + block):
                 state = step_func(
                     state=state,
@@ -142,23 +142,22 @@ def parallel_tempering(
             kTs = runners._normalize_temperature_tensor(temperature=kT, n_steps=md_steps_per_exchange, initial_state=initial_state)
             exchange_round += 1
 
-        if swap_temperature:
-            stats["accept_rate"] = stats["accepted"] / max(1, stats["attempted"])
+        stats["accept_rate"] = stats["accepted"] / max(1, stats["attempted"])
 
-            # swap_log in your previous format
-            swap_data = [
-                {"step": int(step), "i": int(i), "j": int(j), "accepted": bool(acc)}
-                for (step, i, j, acc) in stats["attempted_pairs"]
-            ]
-            swap_log = {
-                "data": swap_data,
-                "info": {
-                    "swap_temperature": bool(swap_temperature),
-                    "accept_rate": float(stats["accept_rate"]),
-                    "attempted": int(stats["attempted"]),
-                    "accepted": int(stats["accepted"]),
-                    "temperatures": temperatures.detach().cpu().tolist(),
-                    **({"external_pressure": P.detach().cpu().tolist()} if isinstance(P, torch.Tensor) else P),
+        # swap_log in your previous format
+        swap_data = [
+            {"step": int(step), "i": int(i), "j": int(j), "accepted": bool(acc)}
+            for (step, i, j, acc) in stats["attempted_pairs"]
+        ]
+        swap_log = {
+            "data": swap_data,
+            "info": {
+                "swap_temperature": bool(swap_temperature),
+                "accept_rate": float(stats["accept_rate"]),
+                "attempted": int(stats["attempted"]),
+                "accepted": int(stats["accepted"]),
+                "temperatures": temperatures.detach().cpu().tolist(),
+                **({"external_pressure": P.detach().cpu().tolist()} if P is not None else {}),
                 },
             }
 

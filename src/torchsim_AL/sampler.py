@@ -233,8 +233,6 @@ class TorchSimSampler(Sampler):
                 pbc=True,
             )
 
-            atoms.info["replica"] = i
-            atoms.info["temperature"] = self.temperatures[i]
             mock_samples.append(atoms)
 
         return mock_samples
