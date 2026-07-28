@@ -50,32 +50,32 @@ Do **not** put `external_pressure`, `dt`, `kT`, `state`, or `model` in `init_kwa
 
 Parameters get validated before any files get put on a cluster or any tasks get executed via `sampler_spec.validate_spec`, so that runs fail early. Logging returns useful warnings and errors if needed.
 
-| Parameter | Type | Units | Default | Notes |
-|---|---|---|---|---|
-| `remote_fs` | `FileSystemHandlerBase` | — | required | remote_handler machine handle |
-| `cluster_config` | `ClusterConfig` | — | required | remote_handler partition/env/template config |
-| `sampling_script` | path | — | required | path to `torch_sim_sampling.py` (or a compatible script) |
-| `founder_path` | path | — | required | ASE-readable starting structure, local file |
-| `temperatures` | `list[float]` | K | required | **must be increasing**, ≥ 2 entries — replica exchange only swaps neighbor-indexed replicas (i, i+1), so an unsorted or duplicate ladder silently breaks the pairing |
-| `integrator_name` | `str` | — | required | one of the 9 names in the integrator table below |
-| `init_kwargs` | `dict` | integrator-specific, see below | required (can be `{}`) | validated against the real `*_init` signature |
-| `step_kwargs` | `dict` | integrator-specific, see below | required (can be `{}`) | validated against the real `*_step` signature |
-| `model_paths` | `list[str] \| None` | — | `["foundation"]` | overridden every iteration by whatever `update()` receives as `sampler_input` from the AL loop |
-| `dt` | `float` | ps | `0.001` | integration timestep |
-| `external_pressure` | `float \| None` | bar | `None` | NPT only; must be `None` or `0` for NVT integrators. If left `None` for NPT, defaults to 0 bar (logged as a warning) |
-| `n_steps_npt` | `int` | steps | `0` | **despite the name, this applies to both NVT and NPT.** It does *not* run a separate equilibration phase — it only controls how many leading MD steps are excluded when `get_sampled_configs()` selects frames for the AL loop. Must be `< n_steps_pt` |
-| `n_steps_pt` | `int` | steps | `100` | total production PT steps |
-| `seed` | `int` | — | `42` | RNG seed. Subsequent iterations increment up by 1 from this seed. |
-| `device` | `str` | — | `"cuda"` | `"cpu"`, `"cuda"`, or `"cuda:N"` |
-| `dtype` | `str` | — | `"float64"` | `"float32"` or `"float64"` |
-| `remote_savepath` | path \| `None` | — | `None` | remote-side calculation directory |
-| `loop_time` | `float` | seconds | `30` | polling interval for job completion |
-| `stub` | `bool` | — | `False` | skip cluster submission, generate mock output instead |
-| `md_steps_per_exchange` | `int` | steps | `100` | MD steps between replica-exchange attempts |
-| `write_frequency` | `int` | steps | `1` | how often trajectory frames + per-step properties (energy, uncertainty) are written. Must be `<= n_steps_pt` |
-| `swap_temperature` | `bool` | — | `True` | whether exchange attempts swap temperature labels |
-| `rescale_momenta_on_swap` | `bool` | — | `True` | rescale momenta to the new temperature label on an accepted swap |
-| `rescale_barostat_on_swap` | `bool` | — | `True` | also rescale NPT barostat DOFs on an accepted swap (no-op for NVT) |
+| Parameter | Type | Default | Notes |
+|---|---|---|---|
+| `remote_fs` | `FileSystemHandlerBase` | required | remote_handler machine handle |
+| `cluster_config` | `ClusterConfig` | required | remote_handler partition/env/template config |
+| `sampling_script` | path | required | path to `torch_sim_sampling.py` (or a compatible script) |
+| `founder_path` | path | required | ASE-readable starting structure, local file |
+| `temperatures` | `list[float]` | required | K. **must be increasing**, ≥ 2 entries — replica exchange only swaps neighbor-indexed replicas (i, i+1), so an unsorted or duplicate ladder silently breaks the pairing |
+| `integrator_name` | `str` | required | one of the 9 names in the integrator table below |
+| `init_kwargs` | `dict` | required (can be `{}`) | integrator-specific, see below; validated against the real `*_init` signature |
+| `step_kwargs` | `dict` | required (can be `{}`) | integrator-specific, see below; validated against the real `*_step` signature |
+| `model_paths` | `list[str] \| None` | `["foundation"]` | overridden every iteration by whatever `update()` receives as `sampler_input` from the AL loop |
+| `dt` | `float` | `0.001` | ps. integration timestep |
+| `external_pressure` | `float \| None` | `None` | bar. NPT only; must be `None` or `0` for NVT integrators. If left `None` for NPT, defaults to 0 bar (logged as a warning) |
+| `n_steps_npt` | `int` | `0` | steps. **despite the name, this applies to both NVT and NPT.** It does *not* run a separate equilibration phase — it only controls how many leading MD steps are excluded when `get_sampled_configs()` selects frames for the AL loop and excluded from exchange attempts. Must be `< n_steps_pt` |
+| `n_steps_pt` | `int` | `100` | steps. production PT steps. total steps = `n_steps_npt` + `n_steps_pt` |
+| `seed` | `int` | `42` | RNG seed. Subsequent iterations increment up by 1 from this seed. |
+| `device` | `str` | `"cuda"` | `"cpu"`, `"cuda"`, or `"cuda:N"` |
+| `dtype` | `str` | `"float64"` | `"float32"` or `"float64"` |
+| `remote_savepath` | path \| `None` | `None` | remote-side calculation directory |
+| `loop_time` | `float` | `30` | seconds. polling interval for job completion |
+| `stub` | `bool` | `False` | skip cluster submission, generate mock output instead |
+| `md_steps_per_exchange` | `int` | `100` | steps. MD steps between replica-exchange attempts |
+| `write_frequency` | `int` | `1` | steps. how often trajectory frames + per-step properties (energy, uncertainty) are written. Must be `<= n_steps_pt` |
+| `swap_temperature` | `bool` | `True` | whether temperature exchanges are attempted |
+| `rescale_momenta_on_swap` | `bool` | `True` | rescale momenta to the new temperature label on an accepted swap |
+| `rescale_barostat_on_swap` | `bool` | `True` | also rescale NPT barostat DOFs on an accepted swap |
 
 `model_paths` / `sampler_input` accepts either `["foundation"]` (MACE-MP foundation model) or a list of local paths to MACE model files. A single model path runs a standard simulation; **two or more** activates `MaceEnsembleModel` (shared message-passing body, per-member readout heads, ensemble-mean energy/forces + `energy_uncertainty`/`forces_uncertainty` attached to every output structure).
 
