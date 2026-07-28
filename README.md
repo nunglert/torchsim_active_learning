@@ -20,20 +20,7 @@ The sampler automatically converts exactly three physical quantities from human-
 | `dt` | picoseconds | `dt_native = dt_ps * MetalUnits.time` |
 | `external_pressure` | bar | `P_native = P_bar * MetalUnits.pressure` |
 
-**Everything else you put in `init_kwargs`/`step_kwargs` (`tau`, `gamma`, `alpha`, `cell_alpha`, `b_tau`, `t_tau`, `tau_p`, `isothermal_compressibility`) is passed straight through to torch_sim, unconverted — i.e. in torch_sim's native unit system, not ps/ps⁻¹/bar⁻¹.** If you want to reason about these in physical units, convert them yourself first:
-
-```python
-from torch_sim.units import MetalUnits
-
-# "time" quantities (tau, b_tau, t_tau, tau_p): physical ps -> native
-native_tau = tau_ps * MetalUnits.time
-
-# "inverse time" quantities (gamma, alpha, cell_alpha): physical ps^-1 -> native
-native_gamma = gamma_per_ps / MetalUnits.time
-
-# "inverse pressure" quantities (isothermal_compressibility): physical bar^-1 -> native
-native_beta_T = beta_T_per_bar / MetalUnits.pressure
-```
+**Everything else you put in `init_kwargs`/`step_kwargs` is passed straight through to torch_sim, unconverted — i.e. in torch_sim's native unit system, not ps/ps⁻¹/bar⁻¹.**
 
 If you omit any of these, torch_sim falls back to its own built-in defaults (usually expressed as a multiple of `dt`, e.g. "100·dt") — see the per-integrator tables below.
 
@@ -57,7 +44,7 @@ Do **not** put `external_pressure`, `dt`, `kT`, `state`, or `model` in `init_kwa
 | `external_pressure` | `float \| None` | bar | `None` | NPT only; must be `None` or `0` for NVT integrators. If left `None` for NPT, defaults to 0 bar (logged as a warning) |
 | `n_steps_npt` | `int` | steps | `0` | **despite the name, this applies to both NVT and NPT.** It does *not* run a separate equilibration phase — it only controls how many leading MD steps are excluded when `get_sampled_configs()` selects frames for the AL loop. Must be `< n_steps_pt` |
 | `n_steps_pt` | `int` | steps | `100` | total production PT steps |
-| `seed` | `int` | — | `42` | RNG seed |
+| `seed` | `int` | — | `42` | RNG seed. Subsequent iterations increment up by 1 from this seed. |
 | `device` | `str` | — | `"cuda"` | `"cpu"`, `"cuda"`, or `"cuda:N"` |
 | `dtype` | `str` | — | `"float64"` | `"float32"` or `"float64"` |
 | `remote_savepath` | path \| `None` | — | `None` | remote-side calculation directory |
@@ -71,7 +58,7 @@ Do **not** put `external_pressure`, `dt`, `kT`, `state`, or `model` in `init_kwa
 
 `model_paths` / `sampler_input` accepts either `["foundation"]` (MACE-MP foundation model) or a list of local paths to MACE model files. A single model path runs a standard simulation; **two or more** activates `MaceEnsembleModel` (shared message-passing body, per-member readout heads, ensemble-mean energy/forces + `energy_uncertainty`/`forces_uncertainty` attached to every output structure).
 
-### Kwarg reference (name → meaning, native units, default)
+### Kwarg reference
 
 All defaults below are torch_sim's own fallback when the kwarg is omitted, expressed relative to `dt` (in native units, i.e. **after** the ps→native conversion already applied to `dt`).
 

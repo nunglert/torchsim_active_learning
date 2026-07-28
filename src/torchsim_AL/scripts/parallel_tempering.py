@@ -28,16 +28,9 @@ def parallel_tempering(
     """
     Parallel tempering / replica exchange for batched simulations.
 
-    Uses attempt_replica_exchange(...) (swap temperatures and/or pressures as labels)
-    and supports:
-      - NVT: temperature swaps
-      - NPT: temperature swaps and/or pressure swaps
-
     Notes
     -----
-    - We do NOT shuffle atoms between replicas. We swap labels (kT and/or P).
-    - To avoid reporter / HDF5 handle issues, this function does not pass any
-      trajectory_reporter into ts.integrate. Do reporting outside if desired.
+    - We do NOT shuffle atoms between replicas. We swap labels.
     """
 
     device = temperatures.device
