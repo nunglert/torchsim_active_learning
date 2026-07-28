@@ -41,7 +41,7 @@ class TorchSimSampler(Sampler):
         dt: Integration timestep in ps (default: 0.001)
         n_steps_npt: Number of equilibration steps without swaps (default: 0). These will not be used for selection.
         n_steps_pt: Number of production PT steps (default: 100)
-        seed: Random seed (default: 123)
+        seed: Random seed (default: 42)
         device: Torch device string (default: "cuda")
         dtype: Torch dtype string (default: "float32")
         remote_savepath: Path on remote machine for calculation files
@@ -125,6 +125,12 @@ class TorchSimSampler(Sampler):
         os.makedirs(self.sample_dir, exist_ok=True)
         os.makedirs(self.results_dir, exist_ok=True)
 
+        try:
+            iteration = int(Path(calcdir).name)
+        except ValueError:
+            iteration = 0
+            seed = kwargs.get("seed", self.seed + iteration)
+
         self.model_files = sampler_input if isinstance(sampler_input, list) else [sampler_input]
 
         is_foundation = self.model_files == ["foundation"]
@@ -166,7 +172,7 @@ class TorchSimSampler(Sampler):
             external_pressure=self.external_pressure,
             n_steps_npt=self.n_steps_npt,
             n_steps_pt=self.n_steps_pt,
-            seed=self.seed,
+            seed=seed,
             device=self.device,
             dtype=self.dtype,
             md_steps_per_exchange=self.md_steps_per_exchange,

@@ -64,6 +64,7 @@ def parallel_tempering(
     integrator = getattr(ts.Integrator, integrator_name)
     init_func, step_func = INTEGRATOR_REGISTRY[integrator]
     initial_state: SimState = ts.initialize_state(state, model.device, model.dtype)
+    initial_state.rng = seed
     first_block = max(min(start_step, n_total_steps), min(md_steps_per_exchange, n_total_steps))
     kTs = runners._normalize_temperature_tensor(temperature=kT, n_steps=first_block, initial_state=initial_state)
     dt = torch.tensor(dt * MetalUnits.time, dtype=dtype, device=device)
