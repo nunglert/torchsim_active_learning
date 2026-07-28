@@ -166,12 +166,6 @@ def validate_spec(
     )
     write_frequency_ok = _check_int(errors, "write_frequency", write_frequency, strict_positive=True)
 
-    if n_steps_pt_ok and n_steps_npt_ok and n_steps_npt >= n_steps_pt:
-        errors.append(
-            f"'n_steps_npt' ({n_steps_npt}) must be less than 'n_steps_pt' ({n_steps_pt}) — "
-            "otherwise every production frame is treated as burn-in and there is "
-            "nothing left for the active-learning loop to select from."
-        )
     if n_steps_pt_ok and write_frequency_ok and write_frequency > n_steps_pt:
         errors.append(
             f"'write_frequency' ({write_frequency}) is larger than 'n_steps_pt' "

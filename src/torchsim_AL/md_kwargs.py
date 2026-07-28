@@ -8,19 +8,35 @@ from torch_sim.integrators import INTEGRATOR_REGISTRY
 
 logger = logging.getLogger(__name__)
 
-# Names that are supplied programmatically by the sampler / parallel_tempering
-# loop and must never be set by the user via init_kwargs or step_kwargs.
-#
-# - state, model, dt, kT: threaded through explicitly on every init/step call.
-# - external_pressure: injected into step_kwargs by parallel_tempering() from
-#   the sampler's top-level `external_pressure` field (see sampler_spec.py)
-
 RESERVED_KWARGS: set[str] = {"state", "model", "dt", "kT", "external_pressure"}
 
 
 def _validate_kwargs(
     sig: inspect.Signature, kwargs: dict, label: str, ignore: set[str]
 ) -> tuple[list[str], list[str]]:
+    """Check kwargs against a function signature, ignoring reserved names.
+
+    Args:
+        sig: Signature of the init/step function being validated against.
+        kwargs: The init_kwargs or step_kwargs dict supplied by the caller.
+        label: Human-readable tag for error messages, e.g. "nvt_langevin.step".
+        ignore: Parameter names to exclude from validation — these are
+            supplied programmatically elsewhere (see RESERVED_KWARGS) and
+            shouldn't be flagged as "missing" just because the caller didn't
+            supply them here.
+
+    Returns:
+        (missing, defaulted): ``missing`` are required parameters (no
+        default) the caller didn't supply — this is fatal. ``defaulted``
+        are optional parameters the caller didn't supply, so torch_sim will
+        fall back to its own default — this is only logged as a warning.
+
+    Raises:
+        TypeError: if kwargs contains a name the function doesn't accept,
+            distinguishing "reserved, supplied automatically" from "not a
+            real parameter of this function" in the message.
+    """
+
     params = {name: p for name, p in sig.parameters.items() if name not in ignore}
 
     unknown = set(kwargs) - set(params)
@@ -58,6 +74,22 @@ def _validate_kwargs(
 
 @dataclass
 class MDSpec:
+    """One integrator's init/step kwargs, validated against torch_sim's real
+        function signatures on construction.
+
+        Names that are supplied programmatically by the sampler / parallel_tempering
+        loop and must never be set by the user via init_kwargs or step_kwargs.
+
+        - state, model, dt, kT: threaded through explicitly on every init/step call.
+        - external_pressure: injected into step_kwargs by parallel_tempering() from
+          the sampler's top-level `external_pressure` field (see sampler_spec.py)
+
+        Resolving ``integrator_name`` and validating ``init_kwargs``/
+        ``step_kwargs`` both happen in ``__post_init__``, so an invalid
+        integrator name or a bad kwarg raises immediately when the object is
+        built — not later when the job actually runs on the cluster.
+        """
+
     integrator_name: str
     init_kwargs: dict[str, Any] = field(default_factory=dict)
     step_kwargs: dict[str, Any] = field(default_factory=dict)
@@ -76,6 +108,17 @@ class MDSpec:
         self.validate_spec()
 
     def validate_spec(self) -> None:
+        """Validate init_kwargs/step_kwargs against the resolved integrator's
+        real signatures.
+
+        Not to be confused with ``sampler_spec.validate_spec`` (module-level,
+        validates the whole sampler config) — this only checks this one
+        integrator's kwargs, and is called automatically from __post_init__.
+
+        Raises:
+            TypeError: if either dict has a missing required parameter or an
+                unrecognized one.
+        """
         init_sig = inspect.signature(self.init_func)
         step_sig = inspect.signature(self.step_func)
 

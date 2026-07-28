@@ -1,6 +1,14 @@
 import logging
 import torch
 
+"""Metropolis acceptance test and in-place state updates for one proposed
+replica-exchange swap.
+
+Only touches the two replicas involved in a proposed swap (indices i, j).
+The actual iteration over neighbor pairs and the decision of *which* pairs
+to propose each round lives in parallel_tempering.py, not here.
+"""
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -13,6 +21,18 @@ def _get_volume_per_system(state) -> torch.Tensor:
 
 
 def _rescale_atom_momenta_in_place(state, sys: int, scale: torch.Tensor):
+    """Scale one replica's momenta in place after an accepted temperature swap.
+
+    Rescaling (rather than redrawing) momenta on a swap keeps the kinetic
+    energy consistent with the *new* temperature label without needing a
+    fresh Maxwell-Boltzmann draw, and preserves detailed balance.
+
+    Args:
+        state: Batched simulation state covering all replicas.
+        sys: System/replica index to rescale (only this replica's momenta
+            are touched).
+        scale: Multiplicative factor, sqrt(kT_new / kT_old).
+    """
     mask = state.system_idx == sys
     p = state.momenta.clone()
     p[mask] *= scale
@@ -53,13 +73,37 @@ def attempt_replica_exchange(
     rescale_momenta: bool = True,
     rescale_barostat: bool = True,
 ) -> tuple[torch.Tensor, torch.Tensor | None, bool]:
-    """
-    Replica exchange move for NVT / NPT.
+    """Metropolis test for swapping replicas i and j's temperature labels.
 
-    Acceptance uses:
-      S(x; beta, P) = beta * (U(x) + P*V(x))   (isotropic P)
+    Always evaluates a temperature-only swap — callers are responsible for
+    only invoking this when a swap is actually wanted (parallel_tempering.py
+    gates on swap_temperature before calling in). Pressure labels never
+    move here: even for NPT, P_i/P_j are held fixed across the proposed
+    swap, only beta_i/beta_j swap.
 
-    Returns updated (kT, external_pressure, accepted).
+    Acceptance uses S(x; beta, P) = beta * (U(x) + P*V(x)) (isotropic P;
+    the P*V term is dropped entirely for NVT, where external_pressure=None):
+
+        log_r = -[S(x_i; beta_j) + S(x_j; beta_i) - S(x_i; beta_i) - S(x_j; beta_j)]
+
+    accepted with probability min(1, exp(log_r)).
+
+    Args:
+        state: Batched simulation state covering all replicas.
+        i, j: Indices of the two replicas to attempt swapping.
+        rng: Generator used only for this function's single accept/reject
+            draw. Does not affect integration noise (see state.rng for that).
+        kT: Current per-replica temperature labels, shape [n_systems].
+        external_pressure: None for NVT. For NPT, a scalar/tensor pressure;
+            note this stays whatever type the caller passed in.
+            It's never coerced to a tensor in what's returned.
+        rescale_momenta: Rescale momenta to match the new label on accept.
+        rescale_barostat: Also rescale NPT barostat DOFs on accept (ignored
+            for states without barostat DOFs).
+
+    Returns:
+        (kT, external_pressure, accepted) — kT is unchanged if rejected,
+        with i/j's labels swapped if accepted.
     """
     U = state.energy
     if U.ndim != 1:

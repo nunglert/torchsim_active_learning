@@ -129,7 +129,7 @@ class TorchSimSampler(Sampler):
             iteration = int(Path(calcdir).name)
         except ValueError:
             iteration = 0
-            seed = kwargs.get("seed", self.seed + iteration)
+        seed = kwargs.get("seed", self.seed + iteration)
 
         self.model_files = sampler_input if isinstance(sampler_input, list) else [sampler_input]
 

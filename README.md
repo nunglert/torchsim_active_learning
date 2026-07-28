@@ -6,8 +6,30 @@ A replica-exchange (parallel tempering) sampler built on [torch_sim](https://git
 
 ## Installation
 
+Installation requires private dependencies as specified in `pyproject.toml`.
+
 ```bash
 pip install -e .
+```
+## Quickstart
+
+This sets up an instance of the `TorchSimSampler`. Using `update()`, the sampler gets supplied with an output path and a MACE model for an active learning iteration. `get_sampled_configs()` uses the `remote_handler` to put all relevant files (model, parallel tempering script, input files, slurm script,...) onto a cluster, execute the remote task, collect the sampled configurations to the previously specified path and returns that path.
+
+```
+from pathlib import Path
+from torchsim_AL.sampler import TorchSimSampler
+
+sampler = TorchSimSampler(
+    remote_fs=None, cluster_config=None,           # not needed in stub mode
+    sampling_script="unused.py",
+    founder_path="structure.xyz",
+    temperatures=[300, 400, 550],
+    integrator_name="nvt_langevin",
+    init_kwargs={}, step_kwargs={"gamma": 1.0},
+    stub=True,
+)
+sampler.update(calcdir=Path("iter0"), sampler_input=["foundation"])
+samples_path = sampler.get_sampled_configs()
 ```
 
 ## Units — read this before setting `init_kwargs`/`step_kwargs`
@@ -22,8 +44,6 @@ The sampler automatically converts exactly three physical quantities from human-
 
 **Everything else you put in `init_kwargs`/`step_kwargs` is passed straight through to torch_sim, unconverted — i.e. in torch_sim's native unit system, not ps/ps⁻¹/bar⁻¹.**
 
-If you omit any of these, torch_sim falls back to its own built-in defaults (usually expressed as a multiple of `dt`, e.g. "100·dt") — see the per-integrator tables below.
-
 Do **not** put `external_pressure`, `dt`, `kT`, `state`, or `model` in `init_kwargs`/`step_kwargs` — they're supplied automatically by the sampler and will be rejected with an explicit error if you try (this also protects against the value you set being silently overwritten).
 
 ## Sampler parameters
@@ -34,11 +54,10 @@ Do **not** put `external_pressure`, `dt`, `kT`, `state`, or `model` in `init_kwa
 | `cluster_config` | `ClusterConfig` | — | required | remote_handler partition/env/template config |
 | `sampling_script` | path | — | required | path to `torch_sim_sampling.py` (or a compatible script) |
 | `founder_path` | path | — | required | ASE-readable starting structure, local file |
-| `temperatures` | `list[float]` | K | required | **must be strictly increasing**, ≥ 2 entries — replica exchange only swaps neighbor-indexed replicas (i, i+1), so an unsorted or duplicate ladder silently breaks the pairing |
+| `temperatures` | `list[float]` | K | required | **must be increasing**, ≥ 2 entries — replica exchange only swaps neighbor-indexed replicas (i, i+1), so an unsorted or duplicate ladder silently breaks the pairing |
 | `integrator_name` | `str` | — | required | one of the 9 names in the integrator table below |
 | `init_kwargs` | `dict` | integrator-specific, see below | required (can be `{}`) | validated against the real `*_init` signature |
 | `step_kwargs` | `dict` | integrator-specific, see below | required (can be `{}`) | validated against the real `*_step` signature |
-| `target_temperature` | `float \| None` | K | `None` | informational only — not consumed by the sampler itself |
 | `model_paths` | `list[str] \| None` | — | `["foundation"]` | overridden every iteration by whatever `update()` receives as `sampler_input` from the AL loop |
 | `dt` | `float` | ps | `0.001` | integration timestep |
 | `external_pressure` | `float \| None` | bar | `None` | NPT only; must be `None` or `0` for NVT integrators. If left `None` for NPT, defaults to 0 bar (logged as a warning) |
@@ -49,7 +68,7 @@ Do **not** put `external_pressure`, `dt`, `kT`, `state`, or `model` in `init_kwa
 | `dtype` | `str` | — | `"float64"` | `"float32"` or `"float64"` |
 | `remote_savepath` | path \| `None` | — | `None` | remote-side calculation directory |
 | `loop_time` | `float` | seconds | `30` | polling interval for job completion |
-| `stub` | `bool` | — | `False` | skip cluster submission, generate mock output instead. Input validation still runs in stub mode — only the remote upload/submit is skipped |
+| `stub` | `bool` | — | `False` | skip cluster submission, generate mock output instead |
 | `md_steps_per_exchange` | `int` | steps | `100` | MD steps between replica-exchange attempts |
 | `write_frequency` | `int` | steps | `1` | how often trajectory frames + per-step properties (energy, uncertainty) are written. Must be `<= n_steps_pt` |
 | `swap_temperature` | `bool` | — | `True` | whether exchange attempts swap temperature labels |
@@ -65,8 +84,8 @@ All defaults below are torch_sim's own fallback when the kwarg is omitted, expre
 | Kwarg | Used by | Meaning | Native units | Default if omitted |
 |---|---|---|---|---|
 | `tau` (step) | `nvt_vrescale` | V-Rescale thermostat relaxation time | time | `100 * dt` |
-| `tau` (step) | `npt_crescale_*` | V-Rescale thermostat relaxation time (temperature control) | time | `100 * dt` |
-| `gamma` | `nvt_langevin` | Langevin friction coefficient | 1/time | `1 / (100 * dt)` |
+| `tau` (step) | `npt_crescale_*` | V-Rescale thermostat relaxation time | time | `100 * dt` |
+| `gamma` | `nvt_langevin` | particle friction | 1/time | `1 / (100 * dt)` |
 | `tau` (init) | `nvt_nose_hoover` | Nosé–Hoover chain relaxation time | time | `100 * dt` |
 | `chain_length` | `nvt_nose_hoover`, `npt_nose_hoover_isotropic` | number of thermostats in the Nosé–Hoover chain | — | `3` |
 | `chain_steps` | `nvt_nose_hoover` | chain integration substeps | — | `3` |

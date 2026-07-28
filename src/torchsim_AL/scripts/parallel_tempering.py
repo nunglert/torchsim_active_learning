@@ -35,7 +35,62 @@ def parallel_tempering(
     rescale_barostat_on_swap: bool = True,
     reporter_args=None,
 ):
+    
+    """Run replica-exchange MD (equilibration + production) and return the
+    final state and swap log.
 
+    Args:
+        replica_atoms: One ASE Atoms per replica (e.g. identical copies of a
+            founder structure) — converted to a batched SimState internally
+            via ts.initialize_state(replica_atoms, device, dtype).
+        model: torch_sim ModelInterface (e.g. MaceModel, MaceEnsembleModel).
+        integrator_name: A torch_sim.Integrator name, e.g. "nvt_langevin".
+        temperatures: Per-replica temperatures in K (human-readable; this
+            function converts to kT in torch_sim's native units internally).
+            Must be increasing — exchange only proposes swaps
+            between neighbor-indexed replicas i, i+1.
+        dt: Timestep in ps (human-readable; converted to native units here).
+        init_kwargs, step_kwargs: Forwarded to the integrator's init/step
+            functions; see README for what's valid per integrator.
+        dtype, device: Target torch dtype/device for the whole run — the
+            state, temperatures, and dt are all built onto these directly,
+            not inferred from the model or from `temperatures`'s own type.
+        n_steps_npt: Equilibration steps run before the first exchange
+            attempt (no swaps proposed during this phase). Despite the
+            name, applies regardless of ensemble (NVT or NPT).
+        n_steps_pt: Production steps run after equilibration, with the
+            normal alternating MD-block/exchange-attempt cycle.
+            Total simulated length is n_steps_npt + n_steps_pt.
+        md_steps_per_exchange: MD steps per block between exchange attempts
+            during the production phase.
+        seed: Seeds this function's own exchange accept/reject draws (via a
+            dedicated torch.Generator) AND the state's own RNG (via
+            initial_state.rng = seed) — so with the same seed, both the
+            exchange decisions and the underlying MD trajectory (initial
+            velocities, thermostat noise) are fully reproducible.
+        external_pressure: None/0 for NVT. For NPT, target pressure in bar
+            (human-readable) — converted to native units internally as P;
+            never mutated, only read.
+        swap_temperature: If False, no exchange attempts are made at all —
+            replicas run as independent MD at fixed temperatures for the
+            whole run (equilibration + production).
+        rescale_momenta_on_swap, rescale_barostat_on_swap: See
+            attempt_replica_exchange.
+        reporter_args: kwargs for torch_sim.TrajectoryReporter, or None to
+            skip trajectory writing. Written continuously across both the
+            equilibration and production phases — the equilibration/
+            production split only affects when swaps start, not what gets
+            recorded; separating the two happens later when reading the
+            trajectory back (see read_trajectory_to_atoms.py).
+
+    Returns:
+        (state, temperatures, external_pressure, swap_log) — swap_log has
+        "data" (per-attempt records) and "info" (summary stats including
+        accept_rate). Note temperatures/external_pressure here are your
+        original human-readable inputs passed straight through, not the
+        internally-converted kT/P values.
+    """
+    
     #Set up seed for replica exchange
     rng = torch.Generator(device=device)
     rng.manual_seed(seed)

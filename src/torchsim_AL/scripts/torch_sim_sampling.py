@@ -108,7 +108,7 @@ common_kwargs = dict(
     n_steps_npt=input_config.n_steps_npt
     )
 
-logger.info("Starting parallel tempering: n_total_steps=%d, md_steps_per_exchange=%d", input_config.n_steps_pt, input_config.md_steps_per_exchange)
+logger.info("Starting parallel tempering: n_total_steps=%d, md_steps_per_exchange=%d", input_config.n_steps_pt + input_config.n_steps_npt, input_config.md_steps_per_exchange)
 state, temperatures, P, swap_log = parallel_tempering(**common_kwargs, reporter_args=reporter_args)
 logger.info(
     "Parallel tempering finished: accept_rate=%.3f (%d/%d attempted)",
