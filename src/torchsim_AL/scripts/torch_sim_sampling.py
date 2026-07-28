@@ -24,7 +24,7 @@ from torchsim_AL.scripts.uncertainty_props import _build_prop_calculators
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-    stream=sys.stdout,
+    stream=sys.stderr,
 )
 logger = logging.getLogger(__name__)
 
