@@ -81,7 +81,7 @@ Parameters get validated before any files get put on a cluster or any tasks get 
 
 ### Kwarg reference
 
-All defaults below are torch_sim's own fallback when the kwarg is omitted, expressed relative to `dt` (in native units, i.e. **after** the ps→native conversion already applied to `dt`).
+All defaults below are `torch_sim`'s own fallback when the kwarg is omitted, expressed relative to `dt` (in native units, i.e. **after** the ps→native conversion already applied to `dt`).
 
 | Kwarg | Used by | Meaning | Native units | Default if omitted |
 |---|---|---|---|---|
