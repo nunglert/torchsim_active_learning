@@ -86,6 +86,8 @@ def parallel_tempering(
             production split only affects when swaps start, not what gets
             recorded; separating the two happens later when reading the
             trajectory back (see read_trajectory_to_atoms.py).
+        log_every_n_rounds: returns a swap log every n exchange rounds,
+            that documents the acceptance rate and progress.
 
     Returns:
         (state, temperatures, external_pressure, swap_log) — swap_log has
@@ -210,15 +212,16 @@ def parallel_tempering(
             # update temperature labels for next MD block
             kTs = runners._normalize_temperature_tensor(temperature=kT, n_steps=md_steps_per_exchange, initial_state=initial_state)
             exchange_round += 1
-            if exchange_round == 1 or exchange_round % log_every_n_rounds == 0:
-                logger.info(
-                    "PT progress: step %d/%d (%.0f%%), round %d, "
-                    "accept_rate so far=%.3f (%d/%d attempted)",
-                    steps_done, n_total_steps, 100 * steps_done / n_total_steps,
-                    exchange_round,
-                    stats["accepted"] / max(1, stats["attempted"]),
-                    stats["accepted"], stats["attempted"],
-                )
+            if log_every_n_rounds != 0 and log_every_n_rounds != None:
+                if exchange_round == 1 or exchange_round % log_every_n_rounds == 0:
+                    logger.info(
+                        "PT progress: step %d/%d (%.0f%%), round %d, "
+                        "accept_rate so far=%.3f (%d/%d attempted)",
+                        steps_done, n_total_steps, 100 * steps_done / n_total_steps,
+                        exchange_round,
+                        stats["accepted"] / max(1, stats["attempted"]),
+                        stats["accepted"], stats["attempted"],
+                    )
 
         stats["accept_rate"] = stats["accepted"] / max(1, stats["attempted"])
 
