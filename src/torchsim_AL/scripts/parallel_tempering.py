@@ -6,6 +6,9 @@ from torch_sim.state import SimState
 from torch_sim import runners
 from torch_sim.integrators import INTEGRATOR_REGISTRY
 from torchsim_AL.scripts.replica_exchange import attempt_replica_exchange
+import logging
+
+logger = logging.getLogger(__name__)
 
 """Replica-exchange (parallel tempering) driver on top of torch_sim.
 
@@ -34,6 +37,7 @@ def parallel_tempering(
     rescale_momenta_on_swap: bool = True,
     rescale_barostat_on_swap: bool = True,
     reporter_args=None,
+    log_every_n_rounds: int = 10,
 ):
     
     """Run replica-exchange MD (equilibration + production) and return the
@@ -90,7 +94,10 @@ def parallel_tempering(
         original human-readable inputs passed straight through, not the
         internally-converted kT/P values.
     """
-    
+
+    #n_sys specified for replica exchange
+    n_sys = len(replica_atoms)
+
     #Set up seed for replica exchange
     rng = torch.Generator(device=device)
     rng.manual_seed(seed)
@@ -203,10 +210,18 @@ def parallel_tempering(
             # update temperature labels for next MD block
             kTs = runners._normalize_temperature_tensor(temperature=kT, n_steps=md_steps_per_exchange, initial_state=initial_state)
             exchange_round += 1
+            if exchange_round == 1 or exchange_round % log_every_n_rounds == 0:
+                logger.info(
+                    "PT progress: step %d/%d (%.0f%%), round %d, "
+                    "accept_rate so far=%.3f (%d/%d attempted)",
+                    steps_done, n_total_steps, 100 * steps_done / n_total_steps,
+                    exchange_round,
+                    stats["accepted"] / max(1, stats["attempted"]),
+                    stats["accepted"], stats["attempted"],
+                )
 
         stats["accept_rate"] = stats["accepted"] / max(1, stats["attempted"])
 
-        # swap_log in your previous format
         swap_data = [
             {"step": int(step), "i": int(i), "j": int(j), "accepted": bool(acc)}
             for (step, i, j, acc) in stats["attempted_pairs"]

@@ -48,6 +48,8 @@ Do **not** put `external_pressure`, `dt`, `kT`, `state`, or `model` in `init_kwa
 
 ## Sampler parameters
 
+Parameters get validated before any files get put on a cluster or any tasks get executed via `sampler_spec.validate_spec`, so that runs fail early. Logging returns useful warnings and errors if needed.
+
 | Parameter | Type | Units | Default | Notes |
 |---|---|---|---|---|
 | `remote_fs` | `FileSystemHandlerBase` | — | required | remote_handler machine handle |
