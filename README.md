@@ -13,7 +13,7 @@ pip install -e .
 ```
 ## Quickstart
 
-This sets up an instance of the `TorchSimSampler`. Using `update()`, the sampler gets supplied with an output path and a MACE model for an active learning iteration. `get_sampled_configs()` uses the `remote_handler` to put all relevant files (model, parallel tempering script, input files, slurm script,...) onto a cluster, execute the remote task, collect the sampled configurations to the previously specified path and returns that path.
+This sets up an instance of the `TorchSimSampler`. Using `update()`, the sampler gets supplied with an output path and a MACE model for an active learning iteration. `get_sampled_configs()` uses the `remote_handler` to put all relevant files (model, parallel tempering script, input files, slurm script,...) onto a cluster, execute the remote task, collect the sampled configurations to the previously specified path and returns that path. A more elaborate example for an active learning loop using `remote_handler` is provided in `example/run_torchsim_al.py`.
 
 ```
 from pathlib import Path
