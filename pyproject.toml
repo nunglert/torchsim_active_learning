@@ -23,7 +23,7 @@ classifiers = [
 dependencies = [
     "ase",
     "torch-sim-atomistic==0.6.0",
-    "mace-torch==0.3.14"
+    "mace-torch==0.3.16"
 ]
 readme = "README.md"
 dynamic = ["version"]
