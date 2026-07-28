@@ -96,7 +96,7 @@ common_kwargs = dict(
     dt=input_config.dt,
     init_kwargs=input_config.init_kwargs,
     step_kwargs=input_config.step_kwargs,
-    n_total_steps=input_config.n_steps_pt,
+    n_steps_pt=input_config.n_steps_pt,
     md_steps_per_exchange=input_config.md_steps_per_exchange,
     seed=input_config.seed,
     external_pressure=input_config.external_pressure,
@@ -104,7 +104,8 @@ common_kwargs = dict(
     rescale_momenta_on_swap=input_config.rescale_momenta_on_swap,
     rescale_barostat_on_swap=input_config.rescale_barostat_on_swap,
     dtype=dtype,
-    device=device
+    device=device,
+    n_steps_npt=input_config.n_steps_npt
     )
 
 logger.info("Starting parallel tempering: n_total_steps=%d, md_steps_per_exchange=%d", input_config.n_steps_pt, input_config.md_steps_per_exchange)

@@ -83,7 +83,6 @@ def attempt_replica_exchange(
     if external_pressure is None:
         # Pure NVT acceptance criterion, no P*V term. torch.as_tensor(None)
         # raises, so this must be handled before any tensor conversion below.
-        P_out = None
         S_i_old = S(U[i], beta_i)
         S_j_old = S(U[j], beta_j)
         S_i_new = S(U[i], beta_i_new)
@@ -102,7 +101,6 @@ def attempt_replica_exchange(
         P_i, P_j = P[i], P[j]
         V = _get_volume_per_system(state)
         V_i, V_j = V[i], V[j]
-        P_out = external_pressure
 
         S_i_old = S(U[i], beta_i, P_i, V_i)
         S_j_old = S(U[j], beta_j, P_j, V_j)
@@ -114,7 +112,7 @@ def attempt_replica_exchange(
     u = torch.rand((), generator=rng, device=kT.device, dtype=kT.dtype)
     accept = torch.log(u) < log_r
     if not bool(accept):
-        return kT, P_out, False
+        return kT, external_pressure, False
 
     # apply swaps
     kT_new = kT.clone()
@@ -129,4 +127,4 @@ def attempt_replica_exchange(
         if rescale_barostat:
             _rescale_barostat_dofs_in_place(state, i, si)
             _rescale_barostat_dofs_in_place(state, j, sj)
-    return kT_new, P_out, True
+    return kT_new, external_pressure, True

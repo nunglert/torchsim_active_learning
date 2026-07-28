@@ -139,12 +139,6 @@ class TorchSimSampler(Sampler):
         else:
             current_model_paths = [Path(p).name for p in self.model_files]
 
-        logger.info(
-            "Validating sampler input for integrator='%s', %d replicas",
-            self.integrator_name,
-            len(self.temperatures),
-        )
-
         if not self.stub:
 
             logger.info(

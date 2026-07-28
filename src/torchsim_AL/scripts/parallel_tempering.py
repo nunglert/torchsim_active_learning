@@ -7,6 +7,14 @@ from torch_sim import runners
 from torch_sim.integrators import INTEGRATOR_REGISTRY
 from torchsim_AL.scripts.replica_exchange import attempt_replica_exchange
 
+"""Replica-exchange (parallel tempering) driver on top of torch_sim.
+
+Runs n_systems replicas (one per temperature) as a single batched
+simulation, alternating blocks of ordinary MD (md_steps_per_exchange steps)
+with a round of neighbor-pair exchange attempts (attempt_replica_exchange).
+No atoms are ever physically moved between replicas — only kT labels swap.
+"""
+
 def parallel_tempering(
     replica_atoms,
     model,
@@ -15,47 +23,41 @@ def parallel_tempering(
     dt: float,
     init_kwargs,
     step_kwargs,
-    n_total_steps: int,
+    dtype,
+    device,
+    n_steps_npt: int,
+    n_steps_pt: int,
     md_steps_per_exchange: int = 100,
     seed: int = 42,
     external_pressure: torch.Tensor | float | None = 0,
     swap_temperature: bool = True,
     rescale_momenta_on_swap: bool = True,
     rescale_barostat_on_swap: bool = True,
-    start_step: int = 0,
     reporter_args=None,
 ):
-    """
-    Parallel tempering / replica exchange for batched simulations.
-
-    Notes
-    -----
-    - We do NOT shuffle atoms between replicas. We swap labels.
-    """
-
-    device = temperatures.device
-    dtype = temperatures.dtype
 
     #Set up seed for replica exchange
     rng = torch.Generator(device=device)
     rng.manual_seed(seed)
 
-    #Set up the state with seed
-    initial_state: SimState = ts.initialize_state(replica_atoms, model.device, model.dtype)
+    #Set up the SimState with seed
+    initial_state: SimState = ts.initialize_state(replica_atoms, device, dtype)
     initial_state.rng = seed
-    n_sys = int(state.n_systems)
-    assert (
-        temperatures.shape[0] == n_sys
-    ), f"Expected temperatures shape [{n_sys}], got {tuple(temperatures.shape)}"
 
-    # Set up Temperature Tensor
+    #Determine correct size of first simulation block
+    start_swap = n_steps_npt
+    n_total_steps = n_steps_pt + n_steps_npt
+    first_block = max(min(start_swap, n_total_steps), min(md_steps_per_exchange, n_total_steps))
+
+    # Temperatures: human-readable Kelvin in, native energy units (kT) out
     temperatures_tensor = torch.tensor(
         temperatures, dtype=dtype, device=device
     )
     kT = temperatures_tensor * MetalUnits.temperature
     kTs = runners._normalize_temperature_tensor(temperature=kT, n_steps=first_block, initial_state=initial_state)
 
-    # Pressure labels (only for NPT); allow scalar or per-replica
+    # Pressure: external_pressure stays human-readable (bar) as passed in;
+    # P is the torch_sim-native converted value used everywhere below.
     if integrator_name.startswith("npt"):
         P = (external_pressure or 0) * MetalUnits.pressure
         step_kwargs["external_pressure"] = P
@@ -63,17 +65,14 @@ def parallel_tempering(
         external_pressure = None
         P = None
 
-    #Set up dt
+    #Set up dt (ps -> native time units)
     dt = torch.tensor(dt * MetalUnits.time, dtype=dtype, device=device)
 
     #Set up integrator
     integrator = getattr(ts.Integrator, integrator_name)
     init_func, step_func = INTEGRATOR_REGISTRY[integrator]
 
-    #Determine correct size of first simulation block
-    first_block = max(min(start_step, n_total_steps), min(md_steps_per_exchange, n_total_steps))
-
-    #Inititalize SimState
+    #Inititalize MDState with initial momenta etc.
     state = init_func(
         state=initial_state, model=model, kT=kTs[0], dt=dt, **init_kwargs
         )
