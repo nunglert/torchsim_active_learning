@@ -32,7 +32,7 @@ sampler.update(calcdir=Path("iter0"), sampler_input=["foundation"])
 samples_path = sampler.get_sampled_configs()
 ```
 
-## Units and Inputs for sampling
+## Units
 
 The sampler automatically converts exactly three physical quantities from human-friendly units into torch_sim's internal "metal" unit system (Å, eV, amu):
 
