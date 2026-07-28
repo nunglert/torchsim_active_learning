@@ -56,7 +56,7 @@ Parameters get validated before any files get put on a cluster or any tasks get 
 | `cluster_config` | `ClusterConfig` | required | remote_handler partition/env/template config |
 | `sampling_script` | path | required | path to `torch_sim_sampling.py` (or a compatible script) |
 | `founder_path` | path | required | ASE-readable starting structure, local file |
-| `temperatures` | `list[float]` | required | K. **must be increasing**, ≥ 2 entries — replica exchange only swaps neighbor-indexed replicas (i, i+1), so an unsorted or duplicate ladder silently breaks the pairing |
+| `temperatures` | `list[float]` | required | K. **must be increasing**, ≥ 2 entries — replica exchange only swaps neighbor-indexed replicas (i, i+1) |
 | `integrator_name` | `str` | required | one of the 9 names in the integrator table below |
 | `init_kwargs` | `dict` | required (can be `{}`) | integrator-specific, see below; validated against the real `*_init` signature |
 | `step_kwargs` | `dict` | required (can be `{}`) | integrator-specific, see below; validated against the real `*_step` signature |
