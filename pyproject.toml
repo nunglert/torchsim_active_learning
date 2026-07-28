@@ -21,10 +21,10 @@ classifiers = [
     "Natural Language :: English"
 ]
 dependencies = [
-    "remote_handler @ git+ssh://git@gitlab.tuwien.ac.at/e165-03-1_theoretische_materialchemie/madsen-s-research-group/remote_handler.git@dev-NU"
+    "remote_handler @ git+ssh://git@gitlab.tuwien.ac.at/e165-03-1_theoretische_materialchemie/madsen-s-research-group/remote_handler.git@dev-NU",
     "ase",
     "torch-sim-atomistic==0.6.0",
-    "mace-torch==0.3.16"
+    "mace-torch==0.3.16",
 ]
 readme = "README.md"
 dynamic = ["version"]

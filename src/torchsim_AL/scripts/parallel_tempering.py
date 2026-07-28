@@ -8,7 +8,7 @@ from torch_sim.integrators import INTEGRATOR_REGISTRY
 from torchsim_AL.scripts.replica_exchange import attempt_replica_exchange
 
 def parallel_tempering(
-    state,
+    replica_atoms,
     model,
     integrator_name,
     temperatures: torch.Tensor,
@@ -35,32 +35,45 @@ def parallel_tempering(
 
     device = temperatures.device
     dtype = temperatures.dtype
+
+    #Set up seed for replica exchange
     rng = torch.Generator(device=device)
     rng.manual_seed(seed)
 
+    #Set up the state with seed
+    initial_state: SimState = ts.initialize_state(replica_atoms, model.device, model.dtype)
+    initial_state.rng = seed
     n_sys = int(state.n_systems)
     assert (
         temperatures.shape[0] == n_sys
     ), f"Expected temperatures shape [{n_sys}], got {tuple(temperatures.shape)}"
 
-    # Labels (kT in energy units)
-    kT = temperatures * MetalUnits.temperature
+    # Set up Temperature Tensor
+    temperatures_tensor = torch.tensor(
+        temperatures, dtype=dtype, device=device
+    )
+    kT = temperatures_tensor * MetalUnits.temperature
+    kTs = runners._normalize_temperature_tensor(temperature=kT, n_steps=first_block, initial_state=initial_state)
 
     # Pressure labels (only for NPT); allow scalar or per-replica
     if integrator_name.startswith("npt"):
-        external_pressure = (external_pressure or 0) * MetalUnits.pressure
-        P = external_pressure
-        step_kwargs["external_pressure"] = external_pressure
+        P = (external_pressure or 0) * MetalUnits.pressure
+        step_kwargs["external_pressure"] = P
     else:
+        external_pressure = None
         P = None
 
+    #Set up dt
+    dt = torch.tensor(dt * MetalUnits.time, dtype=dtype, device=device)
+
+    #Set up integrator
     integrator = getattr(ts.Integrator, integrator_name)
     init_func, step_func = INTEGRATOR_REGISTRY[integrator]
-    initial_state: SimState = ts.initialize_state(state, model.device, model.dtype)
-    initial_state.rng = seed
+
+    #Determine correct size of first simulation block
     first_block = max(min(start_step, n_total_steps), min(md_steps_per_exchange, n_total_steps))
-    kTs = runners._normalize_temperature_tensor(temperature=kT, n_steps=first_block, initial_state=initial_state)
-    dt = torch.tensor(dt * MetalUnits.time, dtype=dtype, device=device)
+
+    #Inititalize SimState
     state = init_func(
         state=initial_state, model=model, kT=kTs[0], dt=dt, **init_kwargs
         )
@@ -77,6 +90,7 @@ def parallel_tempering(
         trajectory_reporter = None
     runners._write_initial_state(trajectory_reporter, state, model)
 
+    #Run simulation in blocks and swap in between
     try:
         stats = {
             "attempted": 0,
@@ -108,13 +122,13 @@ def parallel_tempering(
                     trajectory_reporter.report(state, step, model=model)
             steps_done += block
             if swap_temperature:
-                # --- choose non-overlapping neighbor pairs
+                # choose non-overlapping neighbor pairs
                 if (exchange_round % 2) == 0:
                     pairs = [(i, i + 1) for i in range(0, n_sys - 1, 2)]
                 else:
                     pairs = [(i, i + 1) for i in range(1, n_sys - 1, 2)]
 
-                # --- attempt exchanges
+                # attempt exchanges
                 for i, j in pairs:
                     stats["attempted"] += 1
                     kT, P, acc = attempt_replica_exchange(
@@ -132,7 +146,7 @@ def parallel_tempering(
                         (steps_done, i, j, bool(acc))
                     )
 
-            # --- update temperature labels in Kelvin for next MD block
+            # update temperature labels for next MD block
             kTs = runners._normalize_temperature_tensor(temperature=kT, n_steps=md_steps_per_exchange, initial_state=initial_state)
             exchange_round += 1
 
@@ -150,8 +164,8 @@ def parallel_tempering(
                 "accept_rate": float(stats["accept_rate"]),
                 "attempted": int(stats["attempted"]),
                 "accepted": int(stats["accepted"]),
-                "temperatures": temperatures.detach().cpu().tolist(),
-                **({"external_pressure": P.detach().cpu().tolist()} if P is not None else {}),
+                "temperatures": temperatures,
+                **({"external_pressure": P.detach().cpu().tolist() if isinstance(P, torch.Tensor) else P} if P is not None else {}),
                 },
             }
 

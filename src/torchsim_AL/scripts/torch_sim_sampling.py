@@ -86,17 +86,13 @@ reporter_args = dict(
 
 #Prep input formats for torchsim
 replica_atoms = [copy.deepcopy(at) for _ in range(n_batch)]
-state_in = ts.initialize_state(replica_atoms, device=device, dtype=dtype)
-temperatures_tensor = torch.tensor(
-        input_config.temperatures, dtype=dtype, device=device
-    )
 
 # Run simulation
 common_kwargs = dict(
-    state=state_in,
+    replica_atoms=replica_atoms,
     model=model,
     integrator_name=input_config.integrator_name,
-    temperatures=temperatures_tensor,
+    temperatures=input_config.temperatures,
     dt=input_config.dt,
     init_kwargs=input_config.init_kwargs,
     step_kwargs=input_config.step_kwargs,
@@ -107,6 +103,8 @@ common_kwargs = dict(
     swap_temperature=input_config.swap_temperature,
     rescale_momenta_on_swap=input_config.rescale_momenta_on_swap,
     rescale_barostat_on_swap=input_config.rescale_barostat_on_swap,
+    dtype=dtype,
+    device=device
     )
 
 logger.info("Starting parallel tempering: n_total_steps=%d, md_steps_per_exchange=%d", input_config.n_steps_pt, input_config.md_steps_per_exchange)
