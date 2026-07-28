@@ -17,7 +17,7 @@ def parallel_tempering(
     step_kwargs,
     n_total_steps: int,
     md_steps_per_exchange: int = 100,
-    seed: int = 123,
+    seed: int = 42,
     external_pressure: torch.Tensor | float | None = 0,
     swap_temperature: bool = True,
     rescale_momenta_on_swap: bool = True,

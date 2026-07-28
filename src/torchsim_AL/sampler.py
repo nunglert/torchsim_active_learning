@@ -64,7 +64,7 @@ class TorchSimSampler(Sampler):
         external_pressure: Optional[float] = None,
         n_steps_npt: int = 0,
         n_steps_pt: int = 100,
-        seed: int = 123,
+        seed: int = 42,
         device: str = "cuda",
         dtype: str = "float32",
         remote_savepath: Optional[os.PathLike] = None,
