@@ -1,4 +1,3 @@
-import logging
 import torch
 
 """Metropolis acceptance test and in-place state updates for one proposed
@@ -8,9 +7,6 @@ Only touches the two replicas involved in a proposed swap (indices i, j).
 The actual iteration over neighbor pairs and the decision of *which* pairs
 to propose each round lives in parallel_tempering.py, not here.
 """
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 def _get_volume_per_system(state) -> torch.Tensor:
     """
