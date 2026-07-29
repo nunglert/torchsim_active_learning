@@ -27,7 +27,7 @@ model = LennardJonesModel(
 )
 
 def _create_md_state(seed, temps):
-    small_structure = Atoms(symbols=["Ar"], positions=[(1, 2, 3)], cell=[10, 10, 10], pbc=True)
+    small_structure = Atoms(symbols=["Ar"]*2, positions=[(1, 2, 3), (3, 2, 1)], cell=[10, 10, 10], pbc=True)
     replica_atoms = [copy.deepcopy(small_structure) for _ in range(2)]
     initial_state = ts.initialize_state(replica_atoms, torch.device("cpu"), torch.float64)
     initial_state.rng = seed
@@ -42,9 +42,9 @@ def test_same_seed_is_fully_reproducible_accept():
     assert kT == torch.Tensor([200, 100])
 
 def test_same_seed_is_fully_reproducible_reject():
-    kT, P, acc = attempt_replica_exchange(**_replica_exchange_kwargs(state = _create_md_state(seed=42, temps=torch.Tensor([200, 100])), kT = torch.Tensor([200, 100])))
+    kT, P, acc = attempt_replica_exchange(**_replica_exchange_kwargs(state = _create_md_state(seed=42, temps=torch.Tensor([500, 100])), kT = torch.Tensor([500, 100])))
     assert P == 1 * MetalUnits.pressure
     assert acc == False
-    assert kT == torch.Tensor([200, 100])
+    assert kT == torch.Tensor([500, 100])
 
     

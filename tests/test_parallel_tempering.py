@@ -58,7 +58,7 @@ def test_swap_temperature_false_runs_without_crashing(replica_atoms, lj_model, t
     assert swap_log["info"]["accepted"] == 0
 
 def test_npt_runs_without_crashing(replica_atoms, lj_model, tmp_path):
-    (state, temperatures, P, swap_log), _ = _run(
+    (state, temperatures, P, swap_log) = _run(
         replica_atoms, lj_model, tmp_path,
         integrator_name="npt_langevin_isotropic", external_pressure=1.0, step_kwargs={},
     )
