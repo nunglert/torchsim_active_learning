@@ -29,7 +29,7 @@ def parallel_tempering(
     dtype,
     device,
     n_steps_equil: int,
-    n_steps_production: int,
+    n_steps_prod: int,
     md_steps_per_exchange: int = 100,
     seed: int = 42,
     external_pressure: torch.Tensor | float | None = 0,
@@ -62,9 +62,9 @@ def parallel_tempering(
         n_steps_equil: Equilibration steps run before the first exchange
             attempt (no swaps proposed during this phase). Despite the
             name, applies regardless of ensemble (NVT or NPT).
-        n_steps_production: Production steps run after equilibration, with the
+        n_steps_prod: Production steps run after equilibration, with the
             normal alternating MD-block/exchange-attempt cycle.
-            Total simulated length is n_steps_equil + n_steps_production.
+            Total simulated length is n_steps_equil + n_steps_prod.
         md_steps_per_exchange: MD steps per block between exchange attempts
             during the production phase.
         seed: Seeds this function's own exchange accept/reject draws (via a
@@ -110,7 +110,7 @@ def parallel_tempering(
 
     #Determine correct size of first simulation block
     start_swap = n_steps_equil
-    n_total_steps = n_steps_production + n_steps_equil
+    n_total_steps = n_steps_prod + n_steps_equil
     first_block = max(min(start_swap, n_total_steps), min(md_steps_per_exchange, n_total_steps))
 
     # Temperatures: human-readable Kelvin in, native energy units (kT) out
