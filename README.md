@@ -93,16 +93,16 @@ All defaults below are `torch_sim`'s own fallback when the kwarg is omitted, exp
 |---|---|---|---|---|
 | `tau` (step) | `nvt_vrescale` | V-Rescale thermostat relaxation time | time | `100 * dt` |
 | `tau` (step) | `npt_crescale_*` | V-Rescale thermostat relaxation time | time | `100 * dt` |
-| `gamma` | `nvt_langevin` | particle friction | 1/time | `1 / (100 * dt)` |
+| `gamma` (step) | `nvt_langevin` | particle friction | 1/time | `1 / (100 * dt)` |
 | `tau` (init) | `nvt_nose_hoover` | Nosé–Hoover chain relaxation time | time | `100 * dt` |
-| `chain_length` | `nvt_nose_hoover`, `npt_nose_hoover_isotropic` | number of thermostats in the Nosé–Hoover chain | — | `3` |
-| `chain_steps` | `nvt_nose_hoover` | chain integration substeps | — | `3` |
-| `chain_steps` | `npt_nose_hoover_isotropic` | chain integration substeps | — | `2` |
-| `sy_steps` | `nvt_nose_hoover`, `npt_nose_hoover_isotropic` | Suzuki–Yoshida integration order (must be 1, 3, 5, or 7) | — | `3` |
-| `alpha` | `npt_langevin_isotropic`, `npt_langevin_anisotropic` | particle friction | 1/time | `1 / (5 * dt)` |
-| `cell_alpha` | `npt_langevin_isotropic`, `npt_langevin_anisotropic` | cell friction | 1/time | `1 / (30 * dt)` |
-| `b_tau` | `npt_langevin_isotropic`, `npt_langevin_anisotropic` | barostat time constant | time | `300 * dt` |
-| `t_tau` | `npt_nose_hoover_isotropic` | thermostat (temperature) relaxation time | time | `100 * dt` |
-| `b_tau` | `npt_nose_hoover_isotropic` | barostat (pressure) relaxation time | time | `1000 * dt` |
-| `tau_p` | `npt_crescale_*` | barostat relaxation time | time | `3 * dt` |
-| `isothermal_compressibility` | `npt_crescale_*` | isothermal compressibility | 1/pressure | `1e-6 bar⁻¹` (converted internally) |
+| `chain_length` (init) | `nvt_nose_hoover`, `npt_nose_hoover_isotropic` | number of thermostats in the Nosé–Hoover chain | — | `3` |
+| `chain_steps` (init) | `nvt_nose_hoover` | chain integration substeps | — | `3` |
+| `chain_steps` (init) | `npt_nose_hoover_isotropic` | chain integration substeps | — | `2` |
+| `sy_steps` (init) | `nvt_nose_hoover`, `npt_nose_hoover_isotropic` | Suzuki–Yoshida integration order (must be 1, 3, 5, or 7) | — | `3` |
+| `alpha` (init) | `npt_langevin_isotropic`, `npt_langevin_anisotropic` | particle friction | 1/time | `1 / (5 * dt)` |
+| `cell_alpha` (init) | `npt_langevin_isotropic`, `npt_langevin_anisotropic` | cell friction | 1/time | `1 / (30 * dt)` |
+| `b_tau` (init) | `npt_langevin_isotropic`, `npt_langevin_anisotropic` | barostat time constant | time | `300 * dt` |
+| `t_tau` (init) | `npt_nose_hoover_isotropic` | thermostat (temperature) relaxation time | time | `100 * dt` |
+| `b_tau` (init) | `npt_nose_hoover_isotropic` | barostat (pressure) relaxation time | time | `1000 * dt` |
+| `tau_p` (init) | `npt_crescale_*` | barostat relaxation time | time | `3 * dt` |
+| `isothermal_compressibility` (init) | `npt_crescale_*` | isothermal compressibility | 1/pressure | `1e-6 bar⁻¹` (converted internally) |

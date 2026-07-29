@@ -1,6 +1,7 @@
+remote_handler @ git+ssh://git@gitlab.tuwien.ac.at/e165-03-1_theoretische_materialchemie/madsen-s-research-group/remote_handler.git@dev-NU
 ase
 torch-sim-atomistic==0.6.0
-mace-torch==0.3.14
+mace-torch==0.3.16
 
 [dev]
 pytest==7.4.0
@@ -11,11 +12,5 @@ sphinx>=7.0
 sphinx-autodoc-typehints
 sphinx-rtd-theme
 
-[mace]
-mace-torch==0.3.14
-cuequivariance-torch==0.8.1
-
-[torch_sim]
-mace-torch==0.3.14
-torch-sim-atomistic==0.5.1
-cuequivariance-torch==0.8.1
+[quests]
+quests==2025.9.29
