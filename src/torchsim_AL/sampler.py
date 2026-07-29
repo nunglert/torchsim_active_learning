@@ -43,7 +43,7 @@ class TorchSimSampler(Sampler):
         n_steps_pt: Number of production PT steps (default: 100)
         seed: Random seed (default: 42)
         device: Torch device string (default: "cuda")
-        dtype: Torch dtype string (default: "float32")
+        dtype: Torch dtype string (default: "float64")
         remote_savepath: Path on remote machine for calculation files
         loop_time: Interval (seconds) to poll for job completion
     """
@@ -66,7 +66,7 @@ class TorchSimSampler(Sampler):
         n_steps_pt: int = 100,
         seed: int = 42,
         device: str = "cuda",
-        dtype: str = "float32",
+        dtype: str = "float64",
         remote_savepath: Optional[os.PathLike] = None,
         loop_time: float = 30,
         stub: bool = False,
