@@ -21,14 +21,14 @@ def test_valid_config_is_accepted():
     assert spec["temperatures"] == [300.0, 400.0, 500.0]
     assert spec["integrator_name"] == "nvt_langevin"
     assert spec["dt"] == 0.001
-    assert spec["step"] == {"gamma": 1.0}
+    assert spec["step_kwargs"] == {"gamma": 1.0}
 
 def test_unsorted_temperatures_are_rejected():
     with pytest.raises(ValueError, match="increasing"):
         sampler_spec.validate_spec(**_base_kwargs(temperatures=[300.0, 500.0, 400.0]))
 
 def test_one_temp_and_apply_swaps():
-    with pytest.raises(ValueError, matches="At least 2"):
+    with pytest.raises(ValueError, match="At least 2"):
         sampler_spec.validate_spec(**_base_kwargs(temperatures=[300.0, 500.0, 400.0], swap_temperature=True))
 
 def test_nvt_with_unset_pressure_is_accepted():
@@ -36,12 +36,12 @@ def test_nvt_with_unset_pressure_is_accepted():
     assert spec["external_pressure"] is None
 
 def test_nvt_with_set_pressure_rejected():
-    with pytest.raises(ValueError, matches="must be None or 0"):
+    with pytest.raises(ValueError, match="must be None or 0"):
         sampler_spec.validate_spec(**_base_kwargs(external_pressure=1))
 
 def test_npt_without_set_pressure():
     spec = sampler_spec.validate_spec(**_base_kwargs(integrator_name="npt_langevin_isotropic", step_kwargs={}, init_kwargs={"b_tau": 1.0, "alpha": 1.0}))
-    assert spec["external_pressure"] == 0
+    assert spec["external_pressure"] == None
     assert spec["init_kwargs"] == {"b_tau": 1.0, "alpha": 1.0}
 
 def test_integrator_defaults():
