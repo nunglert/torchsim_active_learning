@@ -68,7 +68,8 @@ def test_same_seed_is_fully_reproducible(replica_atoms, lj_model, tmp_path):
     (state_a, _, _, log_a), _ = _run(replica_atoms, lj_model, tmp_path, seed=7)
     (state_b, _, _, log_b), _ = _run(replica_atoms, lj_model, tmp_path, seed=7)
     assert log_a["data"] == log_b["data"]
-    assert state_a == state_b
+    assert torch.equal(state_a.momenta, state_b.momenta)
+    assert torch.equal(state_a.positions, state_b.positions)
 
 def test_total_steps_is_equilibration_plus_production(replica_atoms, lj_model, tmp_path):
     (state_a, _, _, log_a), _ = _run(replica_atoms, lj_model, tmp_path)
