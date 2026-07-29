@@ -97,7 +97,7 @@ common_kwargs = dict(
     dt=input_config.dt,
     init_kwargs=input_config.init_kwargs,
     step_kwargs=input_config.step_kwargs,
-    n_steps_pt=input_config.n_steps_pt,
+    n_steps_production=input_config.n_steps_production,
     md_steps_per_exchange=input_config.md_steps_per_exchange,
     seed=input_config.seed,
     external_pressure=input_config.external_pressure,
@@ -106,10 +106,10 @@ common_kwargs = dict(
     rescale_barostat_on_swap=input_config.rescale_barostat_on_swap,
     dtype=dtype,
     device=device,
-    n_steps_npt=input_config.n_steps_npt
+    n_steps_equil=input_config.n_steps_equil
     )
 
-logger.info("Starting parallel tempering: n_total_steps=%d, md_steps_per_exchange=%d", input_config.n_steps_pt + input_config.n_steps_npt, input_config.md_steps_per_exchange)
+logger.info("Starting parallel tempering: n_total_steps=%d, md_steps_per_exchange=%d", input_config.n_steps_production + input_config.n_steps_equil, input_config.md_steps_per_exchange)
 state, temperatures, P, swap_log = parallel_tempering(**common_kwargs, reporter_args=reporter_args)
 logger.info(
     "Parallel tempering finished: accept_rate=%.3f (%d/%d attempted)",

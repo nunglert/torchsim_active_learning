@@ -33,8 +33,8 @@ def _run(replica_atoms, lj_model, tmp_path, **overrides):
         step_kwargs={"gamma": 0.5},
         dtype=torch.float64,
         device=torch.device("cpu"),
-        n_steps_npt=10,
-        n_steps_pt=30,
+        n_steps_equil=10,
+        n_steps_production=30,
         md_steps_per_exchange=5,
         seed=42,
     )

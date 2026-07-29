@@ -39,8 +39,8 @@ class TorchSimSampler(Sampler):
             standard simulation; multiple entries activate the
             MaceEnsembleModel (shared-body ensemble with uncertainty).
         dt: Integration timestep in ps (default: 0.001)
-        n_steps_npt: Number of equilibration steps without swaps (default: 0). These will not be used for selection.
-        n_steps_pt: Number of production PT steps (default: 100)
+        n_steps_equil: Number of equilibration steps without swaps (default: 0). These will not be used for selection.
+        n_steps_production: Number of production PT steps (default: 100)
         seed: Random seed (default: 42)
         device: Torch device string (default: "cuda")
         dtype: Torch dtype string (default: "float64")
@@ -62,8 +62,8 @@ class TorchSimSampler(Sampler):
         model_paths: Optional[list[str]] = None,
         dt: float = 0.001,
         external_pressure: Optional[float] = None,
-        n_steps_npt: int = 0,
-        n_steps_pt: int = 100,
+        n_steps_equil: int = 0,
+        n_steps_production: int = 100,
         seed: int = 42,
         device: str = "cuda",
         dtype: str = "float64",
@@ -89,8 +89,8 @@ class TorchSimSampler(Sampler):
         )
         self.dt = dt
         self.external_pressure = external_pressure
-        self.n_steps_npt = n_steps_npt
-        self.n_steps_pt = n_steps_pt
+        self.n_steps_equil = n_steps_equil
+        self.n_steps_production = n_steps_production
         self.seed = seed
         self.device = device
         self.dtype = dtype
@@ -164,8 +164,8 @@ class TorchSimSampler(Sampler):
             temperatures=self.temperatures,
             dt=self.dt,
             external_pressure=self.external_pressure,
-            n_steps_npt=self.n_steps_npt,
-            n_steps_pt=self.n_steps_pt,
+            n_steps_equil=self.n_steps_equil,
+            n_steps_production=self.n_steps_production,
             seed=seed,
             device=self.device,
             dtype=self.dtype,
@@ -276,7 +276,7 @@ class TorchSimSampler(Sampler):
                 atoms_list: list[Atoms] = []
                 for traj_path in traj_paths:
                     traj = TorchSimTrajectory(str(traj_path), mode="r")
-                    atoms = _read_trajectory_frames(traj, self.n_steps_npt, self.write_frequency)
+                    atoms = _read_trajectory_frames(traj, self.n_steps_equil, self.write_frequency)
                     traj.close()
                     atoms_list.extend(atoms)
 

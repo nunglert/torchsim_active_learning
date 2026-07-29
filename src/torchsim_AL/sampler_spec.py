@@ -57,8 +57,8 @@ def validate_spec(
     temperatures: list[float],
     model_paths: list[str],
     external_pressure: Optional[float] = None,
-    n_steps_npt: int = 0,
-    n_steps_pt: int = 100,
+    n_steps_equil: int = 0,
+    n_steps_production: int = 100,
     seed: int = 42,
     device: str = "cuda",
     dtype: str = "float64",
@@ -159,36 +159,36 @@ def validate_spec(
             )
 
     # -- step counts / cadence ------------------------------------------------
-    n_steps_pt_ok = _check_int(errors, "n_steps_pt", n_steps_pt, strict_positive=True)
-    n_steps_npt_ok = _check_int(errors, "n_steps_npt", n_steps_npt, positive=True)
+    n_steps_production_ok = _check_int(errors, "n_steps_production", n_steps_production, strict_positive=True)
+    n_steps_equil_ok = _check_int(errors, "n_steps_equil", n_steps_equil, positive=True)
     md_steps_per_exchange_ok = _check_int(
         errors, "md_steps_per_exchange", md_steps_per_exchange, strict_positive=True
     )
     write_frequency_ok = _check_int(errors, "write_frequency", write_frequency, strict_positive=True)
 
-    if n_steps_pt_ok and write_frequency_ok and write_frequency > n_steps_pt:
+    if n_steps_production_ok and write_frequency_ok and write_frequency > n_steps_production:
         errors.append(
-            f"'write_frequency' ({write_frequency}) is larger than 'n_steps_pt' "
-            f"({n_steps_pt}) — no trajectory frames would ever be written."
+            f"'write_frequency' ({write_frequency}) is larger than 'n_steps_production' "
+            f"({n_steps_production}) — no trajectory frames would ever be written."
         )
-    elif n_steps_pt_ok and write_frequency_ok and n_steps_pt % write_frequency != 0:
+    elif n_steps_production_ok and write_frequency_ok and n_steps_production % write_frequency != 0:
         logger.warning(
-            "n_steps_pt (%d) is not a multiple of write_frequency (%d); the final "
+            "n_steps_production (%d) is not a multiple of write_frequency (%d); the final "
             "partial block will not be written to the trajectory.",
-            n_steps_pt,
+            n_steps_production,
             write_frequency,
         )
     if (
-        n_steps_pt_ok
+        n_steps_production_ok
         and md_steps_per_exchange_ok
-        and md_steps_per_exchange > n_steps_pt
+        and md_steps_per_exchange > n_steps_production
     ):
         logger.warning(
-            "md_steps_per_exchange (%d) > n_steps_pt (%d): no replica-exchange "
+            "md_steps_per_exchange (%d) > n_steps_production (%d): no replica-exchange "
             "swaps will ever be attempted, this reduces to independent MD per "
             "replica.",
             md_steps_per_exchange,
-            n_steps_pt,
+            n_steps_production,
         )
 
     # -- seed -----------------------------------------------------------------
@@ -232,8 +232,8 @@ def validate_spec(
         "temperatures": temperatures,
         "model_paths": model_paths,
         "external_pressure": external_pressure,
-        "n_steps_npt": n_steps_npt,
-        "n_steps_pt": n_steps_pt,
+        "n_steps_equil": n_steps_equil,
+        "n_steps_production": n_steps_production,
         "seed": seed,
         "device": device,
         "dtype": dtype,

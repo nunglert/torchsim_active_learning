@@ -6,7 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def _read_trajectory_frames(traj, n_steps_npt, write_frequency) -> list[Atoms]:
+def _read_trajectory_frames(traj, n_steps_equil, write_frequency) -> list[Atoms]:
     """Read all frames from a TorchSimTrajectory, attaching custom properties.
 
     ``state_to_atoms`` only returns basic structural data
@@ -22,15 +22,15 @@ def _read_trajectory_frames(traj, n_steps_npt, write_frequency) -> list[Atoms]:
     """
 
     n_frames = len(traj)
-    burn_in = n_steps_npt // max(write_frequency, 1)
+    burn_in = n_steps_equil // max(write_frequency, 1)
     
     frames = [state_to_atoms(traj.get_state(i))[0] for i in range(burn_in, n_frames)]
 
     if burn_in >= n_frames:
             logger.warning(
-                "n_steps_npt=%d (%d frames at write_frequency=%d) covers the "
+                "n_steps_equil=%d (%d frames at write_frequency=%d) covers the "
                 "entire trajectory (%d frames) — no production frames to return.",
-                n_steps_npt,
+                n_steps_equil,
                 burn_in,
                 write_frequency,
                 n_frames,
