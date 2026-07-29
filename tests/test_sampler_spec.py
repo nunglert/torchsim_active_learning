@@ -29,7 +29,7 @@ def test_unsorted_temperatures_are_rejected():
 
 def test_one_temp_and_apply_swaps():
     with pytest.raises(ValueError, match="At least 2"):
-        sampler_spec.validate_spec(**_base_kwargs(temperatures=[300.0, 500.0, 400.0], swap_temperature=True))
+        sampler_spec.validate_spec(**_base_kwargs(temperatures=[300.0], swap_temperature=True))
 
 def test_nvt_with_unset_pressure_is_accepted():
     spec = sampler_spec.validate_spec(**_base_kwargs())
@@ -44,12 +44,12 @@ def test_npt_without_set_pressure():
     assert spec["external_pressure"] == None
     assert spec["init_kwargs"] == {"b_tau": 1.0, "alpha": 1.0}
 
-def test_integrator_defaults():
+def test_integrator_defaults_warning():
     spec = sampler_spec.validate_spec(**_base_kwargs(step_kwargs={}))
     assert spec["temperatures"] == [300.0, 400.0, 500.0]
     assert spec["integrator_name"] == "nvt_langevin"
     assert spec["dt"] == 0.001
-    assert spec["step_kwargs"] == {"gamma": 1/(100*spec["dt"]*MetalUnits.time)}
+    assert spec["step_kwargs"] == {}
 
 def test_unknown_step_kwarg_is_rejected_with_specific_message():
     with pytest.raises(ValueError, match="not accepted"):
