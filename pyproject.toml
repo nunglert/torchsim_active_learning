@@ -39,6 +39,9 @@ docs = [
     "sphinx-autodoc-typehints",
     "sphinx-rtd-theme",
 ]
+quests = [
+    "quests==2025.9.29"
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
