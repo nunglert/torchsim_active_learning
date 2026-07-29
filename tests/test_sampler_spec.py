@@ -3,7 +3,6 @@ import pytest
 from torch_sim.units import MetalUnits
 
 def _base_kwargs(**overrides):
-    """A minimal, otherwise-valid config; tests override one field at a time."""
     kwargs = dict(
         founder="founder.extxyz",
         integrator_name="nvt_langevin",
