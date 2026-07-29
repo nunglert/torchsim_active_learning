@@ -69,7 +69,7 @@ Parameters get validated before any files get put on a cluster or any tasks get 
 | `model_paths` | `list[str] \| None` | `["foundation"]` | overridden every iteration by whatever `update()` receives as `sampler_input` from the AL loop |
 | `dt` | `float` | `0.001` | ps. integration timestep |
 | `external_pressure` | `float \| None` | `None` | bar. NPT only; must be `None` or `0` for NVT integrators. If left `None` for NPT, defaults to 0 bar (logged as a warning) |
-| `n_steps_equil` | `int` | `0` | steps. **despite the name, this applies to both NVT and NPT.** It does *not* run a separate equilibration phase — it only controls how many leading MD steps are excluded when `get_sampled_configs()` selects frames for the AL loop and excluded from exchange attempts. Must be `< n_steps_prod` |
+| `n_steps_equil` | `int` | `0` | steps. It does *not* run a separate equilibration phase — it only controls how many leading MD steps are excluded when `get_sampled_configs()` selects frames for the AL loop and excluded from exchange attempts. Must be `< n_steps_prod` |
 | `n_steps_prod` | `int` | `100` | steps. production PT steps. total steps = `n_steps_equil` + `n_steps_prod` |
 | `seed` | `int` | `42` | RNG seed. Subsequent iterations increment up by 1 from this seed. |
 | `device` | `str` | `"cuda"` | `"cpu"`, `"cuda"`, or `"cuda:N"` |
