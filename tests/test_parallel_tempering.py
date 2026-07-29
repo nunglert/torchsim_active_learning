@@ -19,7 +19,7 @@ def lj_model():
 
 @pytest.fixture
 def replica_atoms():
-    small_structure = Atoms(symbols=["Ar"] * 1, positions=[(1, 2, 3)], cell=[10, 10, 10], pbc=True)
+    small_structure = Atoms(symbols=["Ar"] * 2, positions=[(1, 2, 3), (3, 2, 1)], cell=[10, 10, 10], pbc=True)
     return [copy.deepcopy(small_structure) for _ in range(3)]
 
 def _run(replica_atoms, lj_model, tmp_path, **overrides):
