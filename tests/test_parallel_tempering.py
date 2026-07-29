@@ -1,5 +1,6 @@
 import pytest
 import torch
+from torch_sim.units import MetalUnits
 from torchsim_AL.scripts.parallel_tempering import parallel_tempering
 from torchsim_AL.scripts.uncertainty_props import _build_prop_calculators
 from ase import Atoms
@@ -54,3 +55,16 @@ def test_swap_temperature_false_runs_without_crashing(replica_atoms, lj_model, t
     state, temperatures, P, swap_log, _ = _run(replica_atoms, lj_model, tmp_path, swap_temperature=False)
     assert swap_log["info"]["attempted"] == 0
     assert swap_log["info"]["accepted"] == 0
+
+def test_npt_runs_without_crashing(replica_atoms, lj_model, tmp_path):
+    (state, temperatures, P, swap_log), _ = _run(
+        replica_atoms, lj_model, tmp_path,
+        integrator_name="npt_langevin_isotropic", external_pressure=1.0, step_kwargs={},
+    )
+    assert swap_log["info"]["external_pressure"] == pytest.approx(1.0 * MetalUnits.pressure)
+
+def test_same_seed_is_fully_reproducible(replica_atoms, lj_model, tmp_path):
+    (state_a, _, _, log_a), _ = _run(replica_atoms, lj_model, tmp_path, seed=7)
+    (state_b, _, _, log_b), _ = _run(replica_atoms, lj_model, tmp_path, seed=7)
+    assert log_a["data"] == log_b["data"]
+    assert state_a == state_b
