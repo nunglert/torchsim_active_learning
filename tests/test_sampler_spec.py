@@ -44,12 +44,16 @@ def test_npt_without_set_pressure():
     assert spec["external_pressure"] == None
     assert spec["init_kwargs"] == {"b_tau": 1.0, "alpha": 1.0}
 
-def test_integrator_defaults_warning():
-    spec = sampler_spec.validate_spec(**_base_kwargs(step_kwargs={}))
-    assert spec["temperatures"] == [300.0, 400.0, 500.0]
-    assert spec["integrator_name"] == "nvt_langevin"
-    assert spec["dt"] == 0.001
-    assert spec["step_kwargs"] == {}
+def test_integrator_defaults_warning(caplog):
+    with caplog.at_level("WARNING", logger="torchsim_AL.md_kwargs"):
+        spec = sampler_spec.validate_spec(**_base_kwargs(step_kwargs={}))
+        assert spec["temperatures"] == [300.0, 400.0, 500.0]
+        assert spec["integrator_name"] == "nvt_langevin"
+        assert spec["dt"] == 0.001
+        assert spec["step_kwargs"] == {}
+        assert len(caplog.records) == 1
+        record = caplog.records[0]
+        assert "step falling back to defaults for" in record.message
 
 def test_unknown_step_kwarg_is_rejected_with_specific_message():
     with pytest.raises(ValueError, match="not accepted"):
