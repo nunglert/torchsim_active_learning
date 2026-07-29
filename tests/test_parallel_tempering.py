@@ -1,6 +1,7 @@
 import pytest
 import torch
 from torch_sim.units import MetalUnits
+from torch_sim import TorchSimTrajectory
 from torchsim_AL.scripts.parallel_tempering import parallel_tempering
 from torchsim_AL.scripts.uncertainty_props import _build_prop_calculators
 from ase import Atoms
@@ -32,8 +33,8 @@ def _run(replica_atoms, lj_model, tmp_path, **overrides):
         step_kwargs={"gamma": 0.5},
         dtype=torch.float64,
         device=torch.device("cpu"),
-        n_steps_npt=0,
-        n_steps_pt=20,
+        n_steps_npt=10,
+        n_steps_pt=30,
         md_steps_per_exchange=5,
         seed=42,
     )
@@ -68,3 +69,11 @@ def test_same_seed_is_fully_reproducible(replica_atoms, lj_model, tmp_path):
     (state_b, _, _, log_b), _ = _run(replica_atoms, lj_model, tmp_path, seed=7)
     assert log_a["data"] == log_b["data"]
     assert state_a == state_b
+
+def test_total_steps_is_equilibration_plus_production(replica_atoms, lj_model, tmp_path):
+    (state_a, _, _, log_a), _ = _run(replica_atoms, lj_model, tmp_path)
+    filenames = [tmp_path / f"trajectory_{i}.h5md" for i in range(len(replica_atoms))]
+    traj = TorchSimTrajectory(str(filenames[0]), mode="r")
+    last_recorded_step = int(traj.get_steps("positions")[-1])
+    traj.close()
+    assert last_recorded_step == 40
