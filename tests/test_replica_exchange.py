@@ -4,8 +4,9 @@ import torch
 import copy
 from ase import Atoms
 import torch_sim as ts
-from torch_sim.integrators.nvt import nvt_langevin_init
+from torch_sim.integrators.nvt import nvt_langevin_init, nvt_langevin_step
 from torch_sim.units import MetalUnits
+from torch_sim.models.lennard_jones import LennardJonesModel
 
 def _replica_exchange_kwargs(**overrides):
     kwargs=dict(
@@ -20,22 +21,18 @@ def _replica_exchange_kwargs(**overrides):
     kwargs.update(overrides)
     return kwargs
 
-@pytest.fixture
-def lj_model():
-    from torch_sim.models.lennard_jones import LennardJonesModel
+model = LennardJonesModel(
+    sigma=3.4, epsilon=0.01, device=torch.device("cpu"), dtype=torch.float64,
+    compute_forces=True, compute_stress=True, cutoff=6.0,
+)
 
-    return LennardJonesModel(
-        sigma=3.4, epsilon=0.01, device=torch.device("cpu"), dtype=torch.float64,
-        compute_forces=True, compute_stress=True, cutoff=6.0,
-    )
-
-@pytest.fixture
 def _create_md_state(seed, temps):
-    small_structure = Atoms(symbols=["Ar"], positions=[1, 2, 3], cell=[10, 10, 10], pbc=True)
+    small_structure = Atoms(symbols=["Ar"], positions=[(1, 2, 3)], cell=[10, 10, 10], pbc=True)
     replica_atoms = [copy.deepcopy(small_structure) for _ in range(2)]
-    initial_state = ts.initialize_state(replica_atoms, torch.device("cpu"), torch.dtype("float64"))
+    initial_state = ts.initialize_state(replica_atoms, torch.device("cpu"), torch.float64)
     initial_state.rng = seed
-    state = nvt_langevin_init(state=initial_state, model=lj_model, kT=temps, dt=0.001)
+    state = nvt_langevin_init(state=initial_state, model=model, kT=temps, dt=0.001)
+    state = nvt_langevin_step(state=state, model=model, kT=temps, dt=0.001)
     return state
 
 def test_same_seed_is_fully_reproducible_accept():
