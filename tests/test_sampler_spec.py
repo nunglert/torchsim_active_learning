@@ -49,7 +49,7 @@ def test_integrator_defaults():
     assert spec["temperatures"] == [300.0, 400.0, 500.0]
     assert spec["integrator_name"] == "nvt_langevin"
     assert spec["dt"] == 0.001
-    assert spec["step"] == {"gamma": 1/(100*spec["dt"]*MetalUnits.time)}
+    assert spec["step_kwargs"] == {"gamma": 1/(100*spec["dt"]*MetalUnits.time)}
 
 def test_unknown_step_kwarg_is_rejected_with_specific_message():
     with pytest.raises(ValueError, match="not accepted"):
