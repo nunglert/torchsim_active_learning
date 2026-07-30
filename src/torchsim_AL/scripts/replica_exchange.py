@@ -159,9 +159,12 @@ def attempt_replica_exchange(
         kT_new[i], kT_new[j] = kT_j, kT_i
 
     # apply pressure swap
-    P_new = P.clone
-    if P is not None and swap_pressure:
-        P_new[i], P_new[j] = P_new[j], P_new[i]  # isotropic [n_systems]
+    if external_pressure is not None:
+        P_new = P.clone()
+        if swap_pressure:
+            P_new[i], P_new[j] = P_j, P_i
+    else:
+        P_new = None
 
     # rescale kinetic DOFs when temperature label changes
     if rescale_momenta:
