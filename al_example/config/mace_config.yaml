@@ -1,0 +1,16 @@
+model: MACE
+device: "cuda"
+batch_size: 8
+E0s: average
+pair_repulsion: True
+max_num_epochs: 20
+patience: 10
+valid_fraction: 0.1
+freeze: 4
+energy_weight: 1.0
+forces_weight: 10.0
+stress_weight: 0.0
+default_dtype: float32
+foundation_model: 2023-12-10-mace-128-L0_energy_epoch-249.model
+plot: true
+plot_frequency: 0

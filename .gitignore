@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# ML artifacts / large files
+*.pt
+*.pth
+*.ckpt
+*.npz
+*.h5
+checkpoints/
+data/
+wandb/
+runs/
+logs/
+
+# OS/editor cruft
+.DS_Store
+.vscode/
+
+# Big example files
+example/
