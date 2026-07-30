@@ -87,7 +87,7 @@ def main(calchome: str = "/home/user/al_directory"):
         sampling_script=TORCHSIM_AL_SAMPLING_SCRIPT,
         loop_time=LOOP_TIME,
         stub=False,
-        founder_path=INPUTS / "Cu2S_lowC.extxyz",
+        founder_path=INPUTS / "Cu2S_hexagonal.extxyz",
         integrator_name="npt_crescale_triclinic",
         temperatures=[
                 300.0,
@@ -169,7 +169,7 @@ def main(calchome: str = "/home/user/al_directory"):
             sampling_script=TORCHSIM_AL_SAMPLING_SCRIPT,
             loop_time=LOOP_TIME,
             stub=False,
-            founder_path=INPUTS / "Cu2S_lowC.extxyz",
+            founder_path=INPUTS / "Cu2S_hexagonal.extxyz",
             integrator_name="npt_crescale_triclinic",
             temperatures=[
                 300.0,
