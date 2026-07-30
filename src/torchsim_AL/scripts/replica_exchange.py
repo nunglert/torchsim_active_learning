@@ -72,9 +72,9 @@ def attempt_replica_exchange(
 ) -> tuple[torch.Tensor, torch.Tensor | None, bool]:
     """Metropolis test for swapping replicas i and j's temperature labels.
 
-    Always evaluates a temperature swap — callers are responsible for
+    Always evaluates a swap attempt. Callers are responsible for
     only invoking this when a swap is actually wanted (parallel_tempering.py
-    gates on attempt_swap before calling in). Pressure swaps are untested
+    gates on attempt_swap before calling in). Pressure swaps are untested, but implemented here, in case implementation is desired later on.
 
     Acceptance uses S(x; beta, P) = beta * (U(x) + P*V(x)) (isotropic P;
     the P*V term is dropped entirely for NVT, where external_pressure=None):
