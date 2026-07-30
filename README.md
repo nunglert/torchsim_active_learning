@@ -87,7 +87,7 @@ Parameters get validated before any files get put on a cluster or any tasks get 
 
 ### Kwarg reference
 
-All defaults below are `torch_sim`'s own fallback when the kwarg is omitted, expressed relative to `dt` (in native units, i.e. **after** the ps→native conversion already applied to `dt`).
+All defaults below are `torch_sim`'s own fallback when the kwarg is omitted, expressed relative to `dt` (in native units, i.e. **after** the ps→native conversion already applied to `dt`). This list should be exhaustive as of `torch_sim` version `0.6.0`. The `kwarg` validation is done against `torch_sim`'s own functions as reference, so the sampler *should* be able to handle new integrators being added in newer `torch_sim` versions.
 
 | Kwarg | Used by | Meaning | Native units | Default if omitted |
 |---|---|---|---|---|
