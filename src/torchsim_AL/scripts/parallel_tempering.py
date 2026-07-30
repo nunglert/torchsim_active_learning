@@ -33,7 +33,7 @@ def parallel_tempering(
     md_steps_per_exchange: int = 100,
     seed: int = 42,
     external_pressure: torch.Tensor | float | None = 0,
-    swap_temperature: bool = True,
+    attempt_swap: bool = True,
     rescale_momenta_on_swap: bool = True,
     rescale_barostat_on_swap: bool = True,
     reporter_args=None,
@@ -75,7 +75,7 @@ def parallel_tempering(
         external_pressure: None/0 for NVT. For NPT, target pressure in bar
             (human-readable) — converted to native units internally as P;
             never mutated, only read.
-        swap_temperature: If False, no exchange attempts are made at all —
+        attempt_swap: If False, no exchange attempts are made at all —
             replicas run as independent MD at fixed temperatures for the
             whole run (equilibration + production).
         rescale_momenta_on_swap, rescale_barostat_on_swap: See
@@ -184,7 +184,7 @@ def parallel_tempering(
                 if trajectory_reporter:
                     trajectory_reporter.report(state, step, model=model)
             steps_done += block
-            if swap_temperature:
+            if attempt_swap:
                 # choose non-overlapping neighbor pairs
                 if (exchange_round % 2) == 0:
                     pairs = [(i, i + 1) for i in range(0, n_sys - 1, 2)]
@@ -232,7 +232,7 @@ def parallel_tempering(
         swap_log = {
             "data": swap_data,
             "info": {
-                "swap_temperature": bool(swap_temperature),
+                "attempt_swap": bool(attempt_swap),
                 "accept_rate": float(stats["accept_rate"]),
                 "attempted": int(stats["attempted"]),
                 "accepted": int(stats["accepted"]),

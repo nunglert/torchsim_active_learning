@@ -71,7 +71,7 @@ class TorchSimSampler(Sampler):
         loop_time: float = 30,
         stub: bool = False,
         md_steps_per_exchange: int = 100,
-        swap_temperature: bool = True,
+        attempt_swap: bool = True,
         rescale_momenta_on_swap: bool = True,
         rescale_barostat_on_swap: bool = True,
         write_frequency: int=1,
@@ -101,7 +101,7 @@ class TorchSimSampler(Sampler):
         self.init_kwargs = init_kwargs
         self.step_kwargs = step_kwargs
         self.integrator_name = integrator_name
-        self.swap_temperature = swap_temperature
+        self.attempt_swap = attempt_swap
         self.rescale_momenta_on_swap = rescale_momenta_on_swap
         self.rescale_barostat_on_swap = rescale_barostat_on_swap
 
@@ -171,7 +171,7 @@ class TorchSimSampler(Sampler):
             dtype=self.dtype,
             md_steps_per_exchange=self.md_steps_per_exchange,
             write_frequency=self.write_frequency,
-            swap_temperature=self.swap_temperature,
+            attempt_swap=self.attempt_swap,
             rescale_momenta_on_swap=self.rescale_momenta_on_swap,
             rescale_barostat_on_swap=self.rescale_barostat_on_swap,
             init_kwargs=self.init_kwargs,

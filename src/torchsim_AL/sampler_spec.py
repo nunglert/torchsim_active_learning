@@ -64,7 +64,7 @@ def validate_spec(
     dtype: str = "float64",
     md_steps_per_exchange: int = 100,
     write_frequency: int = 10,
-    swap_temperature: bool = True,
+    attempt_swap: bool = True,
     rescale_momenta_on_swap: bool = True,
     rescale_barostat_on_swap: bool = True,
 ) -> dict[str, Any]:
@@ -114,7 +114,7 @@ def validate_spec(
         errors.append(f"'temperatures' must all be numeric (K), got: {temperatures}")
     elif any(t <= 0 for t in temperatures):
         errors.append(f"'temperatures' must all be positive (K), got: {temperatures}")
-    elif len(temperatures) < 2 and swap_temperature == True:
+    elif len(temperatures) < 2 and attempt_swap == True:
         errors.append(
             f"At least 2 temperatures are required to do replica exchange, got {len(temperatures)}."
         )
@@ -213,7 +213,7 @@ def validate_spec(
 
     # -- swap behavior flags --------------------------------------------------
     for name, value in (
-        ("swap_temperature", swap_temperature),
+        ("attempt_swap", attempt_swap),
         ("rescale_momenta_on_swap", rescale_momenta_on_swap),
         ("rescale_barostat_on_swap", rescale_barostat_on_swap),
     ):
@@ -239,7 +239,7 @@ def validate_spec(
         "dtype": dtype,
         "md_steps_per_exchange": md_steps_per_exchange,
         "write_frequency": write_frequency,
-        "swap_temperature": swap_temperature,
+        "attempt_swap": attempt_swap,
         "rescale_momenta_on_swap": rescale_momenta_on_swap,
         "rescale_barostat_on_swap": rescale_barostat_on_swap,
     }

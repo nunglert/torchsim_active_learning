@@ -79,7 +79,7 @@ Parameters get validated before any files get put on a cluster or any tasks get 
 | `stub` | `bool` | `False` | skip cluster submission, generate mock output instead |
 | `md_steps_per_exchange` | `int` | `100` | steps. MD steps between replica-exchange attempts |
 | `write_frequency` | `int` | `1` | steps. how often trajectory frames + per-step properties (energy, uncertainty) are written. Must be `<= n_steps_prod` |
-| `swap_temperature` | `bool` | `True` | whether temperature exchanges are attempted |
+| `attempt_swap` | `bool` | `True` | whether temperature exchanges are attempted |
 | `rescale_momenta_on_swap` | `bool` | `True` | rescale momenta to the new temperature label on an accepted swap |
 | `rescale_barostat_on_swap` | `bool` | `True` | also rescale NPT barostat DOFs on an accepted swap |
 

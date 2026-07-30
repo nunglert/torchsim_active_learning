@@ -64,18 +64,17 @@ def attempt_replica_exchange(
     j: int,
     rng: torch.Generator,
     kT: torch.Tensor,  # [n_systems]
-    external_pressure: torch.Tensor
-    | None = None,  # scalar or [n_systems] or [n_systems,3,3]
+    external_pressure: torch.Tensor | None = None,  # scalar or [n_systems] or [n_systems,3,3]
+    swap_temperature: bool = True,
+    swap_pressure: bool = False,
     rescale_momenta: bool = True,
     rescale_barostat: bool = True,
 ) -> tuple[torch.Tensor, torch.Tensor | None, bool]:
     """Metropolis test for swapping replicas i and j's temperature labels.
 
-    Always evaluates a temperature-only swap — callers are responsible for
+    Always evaluates a temperature swap — callers are responsible for
     only invoking this when a swap is actually wanted (parallel_tempering.py
-    gates on swap_temperature before calling in). Pressure labels never
-    move here: even for NPT, P_i/P_j are held fixed across the proposed
-    swap, only beta_i/beta_j swap.
+    gates on attempt_swap before calling in). Pressure swaps are untested
 
     Acceptance uses S(x; beta, P) = beta * (U(x) + P*V(x)) (isotropic P;
     the P*V term is dropped entirely for NVT, where external_pressure=None):
@@ -154,9 +153,17 @@ def attempt_replica_exchange(
     if not bool(accept):
         return kT, external_pressure, False
 
-    # apply swaps
+    # apply temperature swap
     kT_new = kT.clone()
-    kT_new[i], kT_new[j] = kT_j, kT_i
+    if swap_temperature:
+        kT_new[i], kT_new[j] = kT_j, kT_i
+
+    # apply pressure swap
+    P_new = P.clone
+    if P is not None and swap_pressure:
+        P_tensor = P.clone()
+        P_tensor[i], P_tensor[j] = P_tensor[j], P_tensor[i]
+        P_new = P_tensor  # isotropic [n_systems]
 
     # rescale kinetic DOFs when temperature label changes
     if rescale_momenta:
@@ -167,4 +174,4 @@ def attempt_replica_exchange(
         if rescale_barostat:
             _rescale_barostat_dofs_in_place(state, i, si)
             _rescale_barostat_dofs_in_place(state, j, sj)
-    return kT_new, external_pressure, True
+    return kT_new, P_new, True

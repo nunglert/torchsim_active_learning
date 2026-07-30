@@ -52,8 +52,8 @@ def test_default_settings_run_without_crashing(replica_atoms, lj_model, tmp_path
     (state, temperatures, P, swap_log), _ = _run(replica_atoms, lj_model, tmp_path)
     assert swap_log["info"]["attempted"] > 0
 
-def test_swap_temperature_false_runs_without_crashing(replica_atoms, lj_model, tmp_path):
-    (state, temperatures, P, swap_log), _ = _run(replica_atoms, lj_model, tmp_path, swap_temperature=False)
+def test_attempt_swap_false_runs_without_crashing(replica_atoms, lj_model, tmp_path):
+    (state, temperatures, P, swap_log), _ = _run(replica_atoms, lj_model, tmp_path, attempt_swap=False)
     assert swap_log["info"]["attempted"] == 0
     assert swap_log["info"]["accepted"] == 0
 

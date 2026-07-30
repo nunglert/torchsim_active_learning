@@ -28,7 +28,7 @@ def test_unsorted_temperatures_are_rejected():
 
 def test_one_temp_and_apply_swaps():
     with pytest.raises(ValueError, match="At least 2"):
-        sampler_spec.validate_spec(**_base_kwargs(temperatures=[300.0], swap_temperature=True))
+        sampler_spec.validate_spec(**_base_kwargs(temperatures=[300.0], attempt_swap=True))
 
 def test_nvt_with_unset_pressure_is_accepted():
     spec = sampler_spec.validate_spec(**_base_kwargs())
