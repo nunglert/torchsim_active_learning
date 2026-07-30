@@ -19,7 +19,7 @@ from remote_handler.workflows import (
     evaluators,
     trainers,
 )
-from remote_handler.workflows.selectors import UncertaintySelector, QUESTSSelector, PipelineSelector
+from remote_handler.workflows.selectors import UncertaintySelector, UniformSelector, PipelineSelector
 
 from torchsim_AL.sampler import TorchSimSampler
 from torch_sim.units import MetalUnits
@@ -110,8 +110,8 @@ def main(calchome: str = "/home/user/al_directory"):
     # --- SELECTOR: Pipeline Selector Uncertianty + QUESTS (remote_handler) ---------------
     selector = PipelineSelector(
         [
-            UncertaintySelector(n_configs=20),
-            QUESTSSelector(n_configs=5, method="msc"),
+            UniformSelector(20)
+            UncertaintySelector(n_configs=5),
         ]
     )
     
@@ -123,7 +123,7 @@ def main(calchome: str = "/home/user/al_directory"):
         remote_fs=remote_fs_cpu,
         cluster_config=dft_cluster,
         n_processors=2,
-        num_parallel=2,
+        num_parallel=5,
         incar_kwargs={
             "xc": "R2SCAN",
             "encut": 500,
