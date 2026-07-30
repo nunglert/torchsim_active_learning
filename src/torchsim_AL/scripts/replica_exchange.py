@@ -7,6 +7,12 @@ Only touches the two replicas involved in a proposed swap (indices i, j).
 The actual iteration over neighbor pairs and the decision of *which* pairs
 to propose each round lives in parallel_tempering.py, not here.
 """
+# In order to implement pressure swaps, the torchsim_sampling.py would need
+# to replicate the initial atoms to match the number of pressures and only 
+# one temperature would be specified.
+# If both temperature swaps and pressure swaps would be desired further 
+# indexing logic would be required in parallel tempering and having 
+# two axis in the MDState.
 
 def _get_volume_per_system(state) -> torch.Tensor:
     """
@@ -43,7 +49,7 @@ def _rescale_barostat_dofs_in_place(state, sys: int, scale: torch.Tensor):
     Best-effort rescaling of barostat DOFs for Nose–Hoover style NPT states.
     Safe no-op for states that don't have these attributes.
     """
-    # Nose–Hoover NPT in your code uses: cell_momentum [n_systems,1] and chain momenta
+    # Nose–Hoover NPT uses: cell_momentum [n_systems,1] and chain momenta
     if hasattr(state, "cell_momentum") and state.cell_momentum is not None:
         cm = state.cell_momentum.clone()
         # cm shape could be [n_systems] or [n_systems,1]
@@ -66,7 +72,7 @@ def attempt_replica_exchange(
     kT: torch.Tensor,  # [n_systems]
     external_pressure: torch.Tensor | None = None,  # scalar or [n_systems] or [n_systems,3,3]
     swap_temperature: bool = True,
-    swap_pressure: bool = False,
+    swap_pressure: bool = False, 
     rescale_momenta: bool = True,
     rescale_barostat: bool = True,
 ) -> tuple[torch.Tensor, torch.Tensor | None, bool]:
@@ -74,7 +80,8 @@ def attempt_replica_exchange(
 
     Always evaluates a swap attempt. Callers are responsible for
     only invoking this when a swap is actually wanted (parallel_tempering.py
-    gates on attempt_swap before calling in). Pressure swaps are untested, but implemented here, in case implementation is desired later on.
+    gates on attempt_swap before calling in). Pressure swaps are not supported in 
+    the sampler in general, but implemented here, in case implementation is desired later on.
 
     Acceptance uses S(x; beta, P) = beta * (U(x) + P*V(x)) (isotropic P;
     the P*V term is dropped entirely for NVT, where external_pressure=None):
