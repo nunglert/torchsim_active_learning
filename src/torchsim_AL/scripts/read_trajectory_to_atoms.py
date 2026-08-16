@@ -22,8 +22,7 @@ def _read_trajectory_frames(traj, n_steps_equil, write_frequency) -> list[Atoms]
     """
 
     n_frames = len(traj)
-    burn_in = n_steps_equil // max(write_frequency, 1)
-    
+    burn_in = 0 if n_steps_equil == 0 else n_steps_equil // max(write_frequency, 1) + 1
     frames = [state_to_atoms(traj.get_state(i))[0] for i in range(burn_in, n_frames)]
 
     if burn_in >= n_frames:

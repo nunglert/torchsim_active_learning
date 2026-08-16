@@ -5,10 +5,7 @@ from ase.io import read
 
 from torchsim_AL.sampler import TorchSimSampler
 
-from conftest import PT_N_FRAMES, PT_N_STEPS_EQUIL, PT_WRITE_FREQUENCY
-
-# Frames per replica surviving burn-in, matching _read_trajectory_frames.
-FRAMES_AFTER_BURN_IN = PT_N_FRAMES - (PT_N_STEPS_EQUIL // PT_WRITE_FREQUENCY)
+from conftest import FRAMES_AFTER_BURN_IN
 
 
 # ---------------------------------------------------------------------------

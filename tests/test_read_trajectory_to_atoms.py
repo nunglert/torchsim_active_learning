@@ -10,7 +10,7 @@ from torch_sim import TorchSimTrajectory
 
 from torchsim_AL.scripts.read_trajectory_to_atoms import _read_trajectory_frames
 
-from conftest import PT_N_FRAMES, PT_N_STEPS_EQUIL, PT_N_STEPS_PROD, PT_WRITE_FREQUENCY
+from conftest import PT_N_FRAMES, PT_N_STEPS_EQUIL, PT_N_STEPS_PROD, PT_WRITE_FREQUENCY, FRAMES_AFTER_BURN_IN
 
 
 @pytest.fixture
@@ -31,12 +31,8 @@ def test_writes_expected_number_of_frames(trajectory):
 
 
 def test_burn_in_drops_equilibration_frames(trajectory):
-    # Pins the burn_in formula as currently implemented. See the xfail at the
-    # bottom of this file: this count is one frame too generous, so update this
-    # expectation together with any fix.
     frames = _read_trajectory_frames(trajectory, PT_N_STEPS_EQUIL, PT_WRITE_FREQUENCY)
-    burn_in = PT_N_STEPS_EQUIL // PT_WRITE_FREQUENCY
-    assert len(frames) == PT_N_FRAMES - burn_in
+    assert len(frames) == FRAMES_AFTER_BURN_IN
 
 
 def test_zero_burn_in_returns_every_frame(trajectory):
@@ -63,17 +59,6 @@ def test_equil_longer_than_trajectory_warns_and_returns_nothing(trajectory, capl
     assert frames == []
     assert any("no production frames" in r.message for r in caplog.records)
 
-
-@pytest.mark.xfail(
-    reason=(
-        "Off-by-one: frame k sits at step k*write_frequency, so the frame at "
-        "exactly step n_steps_equil is kept and handed to the selector as "
-        "production data. Note a blanket '+1' is NOT the fix -- it would also "
-        "drop frame 0 when n_steps_equil == 0. Decide first whether the initial "
-        "(un-equilibrated) founder frame should ever reach the selector."
-    ),
-    strict=True,
-)
 def test_burn_in_excludes_frame_at_exactly_n_steps_equil(trajectory):
     frames = _read_trajectory_frames(trajectory, PT_N_STEPS_EQUIL, PT_WRITE_FREQUENCY)
     steps = trajectory.get_steps("positions")
