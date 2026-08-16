@@ -4,23 +4,6 @@ from torch_sim.units import MetalUnits
 from torch_sim import TorchSimTrajectory
 from torchsim_AL.scripts.parallel_tempering import parallel_tempering
 from torchsim_AL.scripts.uncertainty_props import _build_prop_calculators
-from ase import Atoms
-import numpy as np
-import copy
-
-@pytest.fixture
-def lj_model():
-    from torch_sim.models.lennard_jones import LennardJonesModel
-
-    return LennardJonesModel(
-        sigma=3.4, epsilon=0.01, device=torch.device("cpu"), dtype=torch.float64,
-        compute_forces=True, compute_stress=True, cutoff=6.0,
-    )
-
-@pytest.fixture
-def replica_atoms():
-    small_structure = Atoms(symbols=["Ar"] * 2, positions=[(1, 2, 3), (3, 2, 1)], cell=[10, 10, 10], pbc=True)
-    return [copy.deepcopy(small_structure) for _ in range(3)]
 
 def _run(replica_atoms, lj_model, tmp_path, **overrides):
     kwargs = dict(
@@ -62,7 +45,9 @@ def test_npt_runs_without_crashing(replica_atoms, lj_model, tmp_path):
         replica_atoms, lj_model, tmp_path,
         integrator_name="npt_langevin_isotropic", external_pressure=1.0, step_kwargs={},
     )
-    assert swap_log["info"]["external_pressure"] == pytest.approx(1.0 * MetalUnits.pressure)
+    logged = swap_log["info"]["external_pressure"]
+    values = logged if isinstance(logged, list) else [logged]
+    assert values == pytest.approx([1.0 * MetalUnits.pressure] * len(values))
 
 def test_same_seed_is_fully_reproducible(replica_atoms, lj_model, tmp_path):
     (state_a, _, _, log_a), _ = _run(replica_atoms, lj_model, tmp_path, seed=7)

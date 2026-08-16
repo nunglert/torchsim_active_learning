@@ -107,7 +107,7 @@ def main(calchome: str = "/home/user/al_directory"):
         write_frequency = 2
         )
 
-    # --- SELECTOR: Pipeline Selector Uncertianty + QUESTS (remote_handler) ---------------
+    # --- SELECTOR: Pipeline Selector evenly slice samples + QUESTS (remote_handler) ---------------
     selector = PipelineSelector(
         [
             UniformSelector(20)
