@@ -10,7 +10,7 @@ authors = [
     { name = "Bruno Bachmair", email = "e11705357@tuwien.ac.at" }
 ]
 description = "Package for a Replica Exchange Sampler in the remote_handler active learning framework"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",

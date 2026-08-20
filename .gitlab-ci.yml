@@ -27,7 +27,7 @@ workflow:
 
 pytest:
   stage: test
-  image: python:3.11
+  image: python:3.12
   timeout: 1h
   # Uncomment and adjust if the TU Wien runners require an explicit tag.
   # tags:
