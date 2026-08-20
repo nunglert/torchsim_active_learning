@@ -15,6 +15,10 @@ variables:
 
 workflow:
   rules:
+    # Scheduled runs always go ahead. This must sit above the MR-suppression
+    # rule below, which would otherwise swallow a schedule pointed at a branch
+    # that happens to have an open MR.
+    - if: $CI_PIPELINE_SOURCE == "schedule"
     # Merge requests get a pipeline...
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     # ...and the branch pipeline is suppressed while an MR is open, so a push
