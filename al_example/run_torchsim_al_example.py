@@ -56,7 +56,7 @@ def main(calchome: str = "/home/user/al_directory"):
     remote_fs_gpu = RemoteFileSystem(remote_alias="datalab")
     remote_fs_cpu = RemoteFileSystem(remote_alias="dirona")
 
-    # GPU cluster that runs jaxrens NS + NeuralIL training.
+    # GPU cluster that runs torch-sim + MACE training.
     gpu_cluster = ClusterConfig.from_dict(
         {
             "remote_machine": "datalab",
@@ -147,7 +147,7 @@ def main(calchome: str = "/home/user/al_directory"):
         slurm_header_add="#SBATCH --time=0-20:00:00\n#SBATCH --mem=16GB\nmodule purge\nmodule load vasp/6.4.2_intel\nsource /opt/intel/oneapi/setvars.sh --force\nexport VASP_PP_PATH=" + VASP_PP_PATH,
     )
 
-    # --- TRAINER: NeuralIL force field (remote_handler) ------------------
+    # --- TRAINER: MACE force field (remote_handler) ------------------#
     trainer = trainers.MaceFinetuningTrainer(
         remote_fs=remote_fs_gpu,
         cluster_config=gpu_cluster,
@@ -200,7 +200,7 @@ def main(calchome: str = "/home/user/al_directory"):
         initial_atoms = ase.io.read(output_path, index="::5")
     ase.io.write(initial_sample_file, initial_atoms)
 
-    # --- orchestrate ------------------------------------------------------
+    # --- orchestrate ------------------------------------------------------#
     handler = StagedActiveLearningHandler.from_actors(
         sampler=sampler,
         evaluator=evaluator,
