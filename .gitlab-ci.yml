@@ -1,0 +1,69 @@
+# CI for torchsim_AL: install the package and run the pytest suite on every
+# push. CPU-only -- tests/conftest.py masks CUDA, so no GPU runner is needed.
+
+stages:
+  - test
+
+variables:
+  # Keep every cache inside the project dir: GitLab can only cache paths under
+  # $CI_PROJECT_DIR. XDG_CACHE_HOME is what mace's get_cache_dir() honours, so
+  # the foundation-model download survives between pipelines.
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  XDG_CACHE_HOME: "$CI_PROJECT_DIR/.cache"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  GIT_DEPTH: "20"
+
+workflow:
+  rules:
+    # Scheduled runs always go ahead. This must sit above the MR-suppression
+    # rule below, which would otherwise swallow a schedule pointed at a branch
+    # that happens to have an open MR.
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    # Merge requests get a pipeline...
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    # ...and the branch pipeline is suppressed while an MR is open, so a push
+    # to a branch under review runs once, not twice.
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    # Every other branch push, main included.
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+pytest:
+  stage: test
+  image: python:3.12
+  timeout: 1h
+  # Uncomment and adjust if the TU Wien runners require an explicit tag.
+  # tags:
+  #   - docker
+  cache:
+    # Rebuilt whenever the dependency set changes; the model cache rides along.
+    key:
+      files:
+        - pyproject.toml
+    paths:
+      - .cache/pip
+      - .cache/mace
+  before_script:
+    # remote_handler is declared as a git+ssh dependency. Runners have no SSH
+    # key, so rewrite it to HTTPS + CI_JOB_TOKEN. This requires the
+    # remote_handler project to allow this project in
+    # Settings > CI/CD > Job token permissions. Alternative: add an SSH_PRIVATE_KEY
+    # CI variable holding a deploy key and load it into ssh-agent here instead.
+    - git config --global
+      url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/".insteadOf
+      "ssh://git@${CI_SERVER_HOST}/"
+    - python -V
+    - pip install --upgrade pip
+    # Install the CPU torch wheel first (~200 MB instead of the ~2.5 GB CUDA
+    # build). It satisfies torch-sim's and mace's `torch>=2`, so the editable
+    # install below leaves it alone.
+    # - pip install torch --index-url https://download.pytorch.org/whl/cpu
+    - pip install -e ".[dev,quests]"
+  script:
+    - pytest tests/ -v --junitxml=report.xml
+  artifacts:
+    when: always
+    expire_in: 1 week
+    reports:
+      junit: report.xml

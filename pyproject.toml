@@ -7,10 +7,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "torchsim_AL"
 authors = [
-    { name = "Bruno Bachmair", email = "e11705357@tuwien.ac.at" }
+    { name = "Bruno Bachmair", email = "e11705357@tuwien.ac.at" },
+    { name = "Nico Unglert", email = "nico.unglert@tuwien.ac.at" }
 ]
 description = "Package for a Replica Exchange Sampler in the remote_handler active learning framework"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -22,16 +23,16 @@ classifiers = [
 ]
 dependencies = [
     "remote_handler @ git+ssh://git@gitlab.tuwien.ac.at/e165-03-1_theoretische_materialchemie/madsen-s-research-group/remote_handler.git@main",
-    "ase",
-    "torch-sim-atomistic==0.6.0",
-    "mace-torch==0.3.16",
+    "ase>=3.26",
+    "torch-sim-atomistic>=0.6",
+    "mace-torch>=0.3.16",
 ]
 readme = "README.md"
 dynamic = ["version"]
 
 [project.optional-dependencies]
 dev = [
-    "pytest==7.4.0",
+    "pytest>=7.4",
     "pre-commit"
 ]
 docs = [
@@ -40,7 +41,7 @@ docs = [
     "sphinx-rtd-theme",
 ]
 quests = [
-    "quests==2025.9.29"
+    "quests>=2025.9.29"
 ]
 
 [tool.setuptools.packages.find]

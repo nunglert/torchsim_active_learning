@@ -80,30 +80,33 @@ def test_spec_has_no_keys_the_script_ignores():
 def test_script_runs_end_to_end(tmp_path):
     """Execute the real script on a tiny CPU job.
 
-    Needs mace-torch installed (the script imports MACE unconditionally) plus a
-    MACE model file. Skipped otherwise.
+    Needs mace-torch installed (the script imports MACE unconditionally) plus
+    the MACE-MP foundation model, which the script itself pulls for
+    ``model_paths=["foundation"]``. Warming the download here rather than in the
+    subprocess keeps a missing model a clean skip instead of an opaque non-zero
+    exit; mace caches it under ``~/.cache/mace`` after the first fetch.
     """
     pytest.importorskip("mace", reason="mace-torch not installed")
 
-    model_path = Path(__file__).parent.parent / "example" / "inputs" / (
-        "2023-12-10-mace-128-L0_energy_epoch-249.model"
-    )
-    if not model_path.exists():
-        pytest.skip(f"MACE model not available at {model_path}")
+    from mace.calculators.foundations_models import download_mace_mp_checkpoint
 
-    founder_src = Path(__file__).parent.parent / "example" / "inputs" / (
-        "Cu2S_hexagonal_3_3_2.extxyz"
+    try:
+        download_mace_mp_checkpoint("small")
+    except Exception as exc:  # no cached copy and no network
+        pytest.skip(f"MACE-MP foundation model unavailable: {exc}")
+
+    founder_src = Path(__file__).parent.parent / "al_example" / "inputs" / (
+        "Cu2S_hexagonal.extxyz"
     )
     if not founder_src.exists():
         pytest.skip(f"founder structure not available at {founder_src}")
 
     shutil.copy(founder_src, tmp_path / founder_src.name)
-    shutil.copy(model_path, tmp_path / model_path.name)
 
     spec = sampler_spec.validate_spec(
         **_base_kwargs(
             founder=founder_src.name,
-            model_paths=[model_path.name],
+            model_paths=["foundation"],
             temperatures=[300.0, 400.0],
             n_steps_equil=0,
             n_steps_prod=4,

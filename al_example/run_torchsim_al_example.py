@@ -110,7 +110,7 @@ def main(calchome: str = "/home/user/al_directory"):
     # --- SELECTOR: Pipeline Selector evenly slice samples + QUESTS (remote_handler) ---------------
     selector = PipelineSelector(
         [
-            UniformSelector(20)
+            UniformSelector(20),
             UncertaintySelector(n_configs=5),
         ]
     )

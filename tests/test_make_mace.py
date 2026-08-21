@@ -1,12 +1,15 @@
 """Tests for the shared-body MACE ensemble wrapper.
 
-These need mace-torch plus a real model file, so they skip cleanly on a machine
-that has neither. The core claim under test: with N identical members, the
-ensemble mean must reproduce the single-model result exactly and the
-uncertainty must collapse to zero.
-"""
+These need mace-torch plus a real model, so they skip cleanly on a machine that
+has neither. Rather than shipping a checkpoint with the repo, the fixture pulls
+the small MACE-MP foundation model -- the same one ``torch_sim_sampling`` loads
+for ``model_paths=["foundation"]`` -- which mace caches under ``~/.cache/mace``
+after the first download. No network and no cache -> skip.
 
-from pathlib import Path
+The core claim under test: with N identical members, the ensemble mean must
+reproduce the single-model result exactly and the uncertainty must collapse to
+zero.
+"""
 
 import pytest
 import torch
@@ -15,19 +18,16 @@ pytest.importorskip("mace", reason="mace-torch not installed")
 
 from torchsim_AL.scripts.make_mace import MaceEnsembleModel, _make_model  # noqa: E402
 
-MODEL_PATH = (
-    Path(__file__).parent.parent
-    / "example"
-    / "inputs"
-    / "2023-12-10-mace-128-L0_energy_epoch-249.model"
-)
-
 
 @pytest.fixture(scope="module")
 def raw_mace():
-    if not MODEL_PATH.exists():
-        pytest.skip(f"MACE model not available at {MODEL_PATH}")
-    return torch.load(MODEL_PATH, map_location="cpu", weights_only=False)
+    """The small MACE-MP foundation model, downloaded once and cached by mace."""
+    from mace.calculators.foundations_models import mace_mp
+
+    try:
+        return mace_mp(model="small", device="cpu", return_raw_model=True)
+    except Exception as exc:  # no cached copy and no network
+        pytest.skip(f"MACE-MP foundation model unavailable: {exc}")
 
 
 @pytest.fixture
