@@ -427,8 +427,8 @@ class MaceEnsembleModel(ModelInterface):
             member_stresses: list[torch.Tensor] = []
 
             for m in range(self.n_members):
-                # forces, virials, stress, hessian, edge_forces
-                forces_m, _, stress_m, _, _ = get_outputs(
+                # forces, virials, stress, ...; arity varies across mace versions
+                outputs_m = get_outputs(
                     energy=member_inter_es[m],
                     positions=positions,
                     displacement=displacement,
@@ -439,6 +439,7 @@ class MaceEnsembleModel(ModelInterface):
                     compute_stress=self.compute_stress,
                     compute_hessian=False,
                 )
+                forces_m, stress_m = outputs_m[0], outputs_m[2]
                 member_forces.append(forces_m.detach())
                 if self.compute_stress and stress_m is not None:
                     member_stresses.append(stress_m.detach())
@@ -451,7 +452,7 @@ class MaceEnsembleModel(ModelInterface):
                 self.stress_uncertainty = stress_stack.std(dim=0)
 
         # --- Mean forces/stress (final backward, releases graph) ----------
-        mean_forces, _, mean_stress, _, _ = get_outputs(
+        mean_outputs = get_outputs(
             energy=mean_inter_e,
             positions=positions,
             displacement=displacement,
@@ -462,6 +463,7 @@ class MaceEnsembleModel(ModelInterface):
             compute_stress=self.compute_stress,
             compute_hessian=False,
         )
+        mean_forces, mean_stress = mean_outputs[0], mean_outputs[2]
 
         # --- Reset counter for prop_calculators ---------------------------
         self._uncertainty_report_counter = 0
