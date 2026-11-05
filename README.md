@@ -6,7 +6,8 @@ A replica-exchange (parallel tempering) sampler built on [torch_sim](https://git
 
 ## Installation
 
-Installation requires private dependencies as specified in `pyproject.toml`.
+`remote_handler` is installed from GitHub as specified in `pyproject.toml`;
+no SSH key or token is needed.
 
 ```bash
 pip install -e .

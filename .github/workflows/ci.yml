@@ -1,0 +1,65 @@
+name: CI
+
+# Install the package and run the pytest suite. CPU-only -- tests/conftest.py
+# masks CUDA, so no GPU runner is needed.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+# A newer push to the same branch/PR supersedes the running one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    container: python:3.12
+    timeout-minutes: 60
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      # Keep the pip and mace caches inside the workspace so actions/cache can
+      # restore them. XDG_CACHE_HOME is what mace's get_cache_dir() honours,
+      # so the foundation-model download survives between runs. (Set here,
+      # not under `env:`, because github.workspace is the host path, not the
+      # container's.)
+      - name: Point caches into the workspace
+        run: |
+          echo "PIP_CACHE_DIR=$GITHUB_WORKSPACE/.cache/pip" >> "$GITHUB_ENV"
+          echo "XDG_CACHE_HOME=$GITHUB_WORKSPACE/.cache" >> "$GITHUB_ENV"
+
+      # Rebuilt whenever the dependency set changes; the model cache rides
+      # along.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .cache/pip
+            .cache/mace
+          key: deps-${{ hashFiles('pyproject.toml') }}
+
+      - name: Install
+        run: |
+          python -V
+          pip install --upgrade pip
+          # Install the CPU torch wheel first (~200 MB instead of the ~2.5 GB
+          # CUDA build). It satisfies torch-sim's and mace's `torch>=2`, so
+          # the editable install below leaves it alone.
+          # pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[dev,quests]"
+
+      - name: Run tests
+        run: pytest tests/ -v --junitxml=report.xml
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-report
+          path: report.xml
