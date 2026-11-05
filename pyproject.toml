@@ -22,7 +22,7 @@ classifiers = [
     "Natural Language :: English"
 ]
 dependencies = [
-    "remote_handler @ git+ssh://git@gitlab.tuwien.ac.at/e165-03-1_theoretische_materialchemie/madsen-s-research-group/remote_handler.git@main",
+    "remote_handler @ git+https://github.com/nunglert/remote_handler.git@main",
     "ase>=3.26",
     "torch-sim-atomistic>=0.6",
     "mace-torch>=0.3.16",

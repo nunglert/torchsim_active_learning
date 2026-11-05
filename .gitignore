@@ -28,5 +28,5 @@ logs/
 # Big example files
 example/
 
-# CI caches (pip / mace model), kept in-project for GitLab caching
+# CI caches (pip / mace model), kept in-project for actions/cache
 .cache/
