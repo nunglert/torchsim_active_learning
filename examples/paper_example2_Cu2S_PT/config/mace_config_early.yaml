@@ -1,0 +1,18 @@
+model: MACE
+device: "cuda"
+batch_size: 8
+E0s:
+  29: -6.9689   # Cu
+  16: -5.1163   # S
+pair_repulsion: True
+max_num_epochs: 300
+patience: 50
+valid_fraction: 0.1
+freeze: 4
+energy_weight: 1.0
+forces_weight: 10.0
+stress_weight: 0.0
+default_dtype: float32
+foundation_model: mace-mp-0b3-medium.model
+plot: true
+plot_frequency: 0
